@@ -4,12 +4,13 @@ import com.fantasyhockey.fantasy_league.model.FantasyTeam;
 import com.fantasyhockey.fantasy_league.model.Player;
 import com.fantasyhockey.fantasy_league.model.User;
 import com.fantasyhockey.fantasy_league.repository.FantasyTeamRepository;
-import com.fantasyhockey.fantasy_league.repository.PlayerRepository; // Import!
+import com.fantasyhockey.fantasy_league.repository.PlayerRepository;
 import com.fantasyhockey.fantasy_league.repository.UserRepository;
-import jakarta.transaction.Transactional; // Import!
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -74,5 +75,9 @@ public class FantasyTeamService {
 
         // 3. Ulož změnu (JPA si všimne, že se seznam zmenšil, a smaže řádek v propojovací tabulce)
         teamRepository.save(team);
+    }
+
+    public List<FantasyTeam> getLeaderboard() {
+        return teamRepository.findAllByOrderByTotalFantasyPointsDesc();
     }
 }
