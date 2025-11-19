@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Optional;
 
@@ -39,5 +41,16 @@ public class TeamController {
     public String createTeam(@RequestParam("teamName") String teamName, Principal principal) {
         teamService.createTeam(teamName, principal.getName());
         return "redirect:/my-team";
+    }
+    @PostMapping("/add-player")
+    public String addPlayerToTeam(@RequestParam("playerId") Long playerId, Principal principal) {
+        try {
+            teamService.addPlayerToTeam(playerId, principal.getName());
+            return "redirect:/my-team";
+        } catch (RuntimeException e) {
+            // OPRAVA: Enkódování češtiny do URL formátu
+            String encodedError = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+            return "redirect:/players?error=" + encodedError;
+        }
     }
 }
