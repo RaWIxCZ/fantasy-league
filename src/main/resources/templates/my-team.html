@@ -9,7 +9,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 th:text="${team.teamName}">Název Týmu</h1>
   <div>
-    <span class="badge bg-success">Skóre: 0</span>
+    <span class="badge bg-success fs-5" th:text="'Skóre: ' + ${team.totalFantasyPoints}">Skóre: 0</span>
     <a href="/players" class="btn btn-outline-primary ms-2">Draftovat hráče</a>
     <a href="/logout" class="btn btn-danger ms-2">Odhlásit</a>
   </div>

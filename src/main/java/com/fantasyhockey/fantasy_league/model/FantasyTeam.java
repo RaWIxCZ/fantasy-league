@@ -18,6 +18,9 @@ public class FantasyTeam {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Defaultně 0, aby to nebylo null
+    private int totalFantasyPoints = 0;
+
     private String teamName;
 
     // VAZBA 1:1 (Jeden tým patří jednomu uživateli)
