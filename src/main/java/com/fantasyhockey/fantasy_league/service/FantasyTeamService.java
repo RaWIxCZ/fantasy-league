@@ -58,4 +58,21 @@ public class FantasyTeamService {
         team.getPlayers().add(player);
         teamRepository.save(team);
     }
+    @Transactional
+    public void removePlayerFromTeam(Long playerId, String username) {
+        // 1. Najdi tým
+        FantasyTeam team = getTeamByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Tým nenalezen"));
+
+        // 2. Odstraň hráče ze seznamu
+        // Česky: "Projdi seznam hráčů a vyhoď toho, jehož ID se rovná playerId"
+        boolean removed = team.getPlayers().removeIf(player -> player.getId().equals(playerId));
+
+        if (!removed) {
+            throw new RuntimeException("Hráč v týmu nebyl nalezen!");
+        }
+
+        // 3. Ulož změnu (JPA si všimne, že se seznam zmenšil, a smaže řádek v propojovací tabulce)
+        teamRepository.save(team);
+    }
 }

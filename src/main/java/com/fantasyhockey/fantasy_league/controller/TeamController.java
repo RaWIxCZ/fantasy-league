@@ -53,4 +53,9 @@ public class TeamController {
             return "redirect:/players?error=" + encodedError;
         }
     }
+    @PostMapping("/remove-player") // Pozor: Používáme POST, protože měníme data (mazání je změna)
+    public String removePlayer(@RequestParam("playerId") Long playerId, Principal principal) {
+        teamService.removePlayerFromTeam(playerId, principal.getName());
+        return "redirect:/my-team"; // Po smazání zůstáváme na stránce týmu
+    }
 }

@@ -20,19 +20,30 @@
   Tvůj tým je prázdný! Jdi na seznam hráčů a vyber si posily.
 </div>
 
-<table th:unless="${team.players.empty}" class="table table-bordered">
-  <thead>
+<table th:unless="${team.players.empty}" class="table table-bordered align-middle">
+  <thead class="table-dark">
   <tr>
     <th>Jméno</th>
     <th>Pozice</th>
     <th>Tým NHL</th>
-  </tr>
+    <th>Akce</th> </tr>
   </thead>
   <tbody>
   <tr th:each="player : ${team.players}">
     <td th:text="${player.firstName} + ' ' + ${player.lastName}">Jméno</td>
-    <td th:text="${player.position}">POS</td>
+    <td>
+      <span th:text="${player.position}" class="badge bg-secondary">POS</span>
+    </td>
     <td th:text="${player.teamName}">NHL Team</td>
+
+    <td>
+      <form th:action="@{/remove-player}" method="post">
+        <input type="hidden" name="playerId" th:value="${player.id}" />
+        <button type="submit" class="btn btn-sm btn-danger">
+          Odstranit
+        </button>
+      </form>
+    </td>
   </tr>
   </tbody>
 </table>
