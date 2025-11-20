@@ -1,9 +1,11 @@
 package com.fantasyhockey.fantasy_league.service;
 
 import com.fantasyhockey.fantasy_league.model.FantasyTeam;
+import com.fantasyhockey.fantasy_league.model.LineupSpot;
 import com.fantasyhockey.fantasy_league.model.Player;
 import com.fantasyhockey.fantasy_league.model.User;
 import com.fantasyhockey.fantasy_league.repository.FantasyTeamRepository;
+import com.fantasyhockey.fantasy_league.repository.LineupSpotRepository;
 import com.fantasyhockey.fantasy_league.repository.PlayerRepository;
 import com.fantasyhockey.fantasy_league.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -79,5 +81,41 @@ public class FantasyTeamService {
 
     public List<FantasyTeam> getLeaderboard() {
         return teamRepository.findAllByOrderByTotalFantasyPointsDesc();
+    }
+
+    private final LineupSpotRepository lineupRepository; // Přidej do konstruktoru/Lombok
+
+    @Transactional
+    public void saveLineupSpot(String username, Long playerId, String slotName) {
+        // 1. Najdi tým a hráče
+        FantasyTeam team = getTeamByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Tým nenalezen"));
+
+        Player player = playerRepository.findById(playerId)
+                .orElseThrow(() -> new RuntimeException("Hráč nenalezen"));
+
+        // 2. Zkontroluj, jestli hráč už nesedí na jiném slotu (ať se nenaklonuje)
+        // (Pro jednoduchost to teď vynecháme, ale v realitě bychom měli smazat jeho starou pozici)
+
+        // 3. Podívej se, jestli už na tom slotu někdo není -> pokud ano, přepíšeme ho
+        LineupSpot spot = lineupRepository.findByTeamAndSlotName(team, slotName)
+                .orElse(new LineupSpot()); // Pokud neexistuje, vytvoříme nový
+
+        // 4. Nastav data
+        spot.setTeam(team);
+        spot.setPlayer(player);
+        spot.setSlotName(slotName);
+
+        lineupRepository.save(spot);
+    }
+
+    @Transactional
+    public void removePlayerFromSlot(String username, String slotName) {
+        FantasyTeam team = getTeamByUsername(username).orElseThrow();
+        lineupRepository.deleteByTeamAndSlotName(team, slotName);
+    }
+
+    public List<LineupSpot> getTeamLineup(FantasyTeam team) {
+        return lineupRepository.findByTeam(team);
     }
 }

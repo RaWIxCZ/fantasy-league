@@ -1,0 +1,266 @@
+/* --- HŘIŠTĚ (LEVÁ STRANA) --- */
+.rink-container {
+    background-color: #fff; /* Led je bílý */
+    border: 5px solid #c0392b; /* Červený mantinel */
+    border-radius: 20px;
+    height: 600px;
+    position: relative; /* Abychom mohli pozicovat hráče absolutně */
+    background-image:
+            linear-gradient(#3498db 2px, transparent 2px), /* Modrá čára */
+            radial-gradient(circle, transparent 60%, #c0392b 60%, #c0392b 65%, transparent 65%); /* Kruh */
+    background-size: 100% 50px, 200px 200px;
+    background-position: 0 300px, center 200px; /* Umístění čar */
+    background-repeat: no-repeat;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.1);
+}
+
+/* Slot pro hráče na hřišti */
+.player-slot {
+    width: 100px;
+    height: 120px;
+    border: 2px dashed #bdc3c7;
+    border-radius: 10px;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.8);
+    transition: all 0.3s;
+}
+
+.player-slot:hover {
+    border-color: #3498db;
+    background: #ecf0f1;
+}
+
+/* Pozice slotů - UNIVERZÁLNÍ PRO OBĚ LAJNY */
+
+/* Brankář */
+[data-position="GK"] { bottom: 20px; left: 50%; transform: translateX(-50%); border-color: #2ecc71; }
+
+/* Obrana */
+[data-position="LD"] { bottom: 150px; left: 20%; }
+[data-position="RD"] { bottom: 150px; right: 20%; }
+
+/* Útok */
+[data-position="LW"] { top: 80px; left: 15%; }
+[data-position="C"]  { top: 60px; left: 50%; transform: translateX(-50%); }
+[data-position="RW"] { top: 80px; right: 15%; }
+
+/* --- SEZNAM HRÁČŮ (PRAVÁ STRANA) --- */
+.roster-list {
+    max-height: 600px;
+    overflow-y: auto; /* Rolování, když je hráčů moc */
+}
+
+.player-card {
+    cursor: grab; /* Ikona ruky */
+    transition: transform 0.2s;
+}
+
+.player-card:active {
+    cursor: grabbing;
+}
+
+.player-headshot {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ecf0f1;
+    background: #fff;
+}
+
+.position-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 0.8rem;
+}
+
+/* --- HRÁČ NA LEDĚ (TOKEN) --- */
+.ice-player-token {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: fadeIn 0.3s;
+}
+
+/* Animace při vložení */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.ice-player-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #2c3e50;
+    background: white;
+    margin-bottom: 5px;
+    object-fit: cover;
+}
+
+.ice-player-name {
+    background: #2c3e50;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Tlačítko pro odstranění (červený křížek) */
+.remove-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.remove-btn:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+/* Když je slot plný, skryjeme ten nápis "LW" na pozadí */
+.player-slot.occupied small {
+    display: none;
+}
+
+/* --- NOVÝ DESIGN KARTY NA STŘÍDAČCE --- */
+.roster-card-modern {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Rozhodí obsah na strany */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: grab;
+}
+
+.roster-card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: #3498db;
+}
+
+.roster-card-modern:active {
+    cursor: grabbing;
+}
+
+/* Levá část: Fotka + Info */
+.player-info-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-img-small {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f1f1f1;
+    background: #fff;
+}
+
+.player-details h6 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #2c3e50;
+}
+
+.player-subtext {
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* Pravá část: Statistiky (Mřížka) */
+.player-stats-right {
+    display: flex;
+    gap: 15px; /* Mezera mezi sloupci */
+    text-align: center;
+    padding-left: 15px;
+    border-left: 1px solid #eee; /* Oddělovací čára */
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 25px;
+}
+
+.stat-value {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #2c3e50;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    color: #95a5a6;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+
+/* Zvýraznění bodů (poslední sloupec) */
+.stat-box.primary .stat-value {
+    color: #e67e22; /* Oranžová pro body */
+}
+
+/* --- NASAZENÝ HRÁČ NA STŘÍDAČCE --- */
+.roster-card-modern.is-assigned {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+    border-color: #bdc3c7;
+    position: relative; /* Nutné pro pozicování overlay */
+}
+
+/* Překryvný text "Nasazen..." */
+.assigned-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.85); /* Poloprůhledná bílá */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #c0392b; /* Červená barva textu */
+    font-weight: bold;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    text-align: center;
+    padding: 5px;
+
+    /* DŮLEŽITÉ: Toto umožní kartu chytit myší i přes ten text! */
+    pointer-events: none;
+}

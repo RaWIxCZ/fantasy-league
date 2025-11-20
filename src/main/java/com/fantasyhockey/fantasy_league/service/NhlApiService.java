@@ -87,6 +87,8 @@ public class NhlApiService {
         player.setLastName(dto.getLastNameObj().getDefaultName());
         player.setPosition(dto.getPositionCode());
         player.setTeamName("Boston Bruins"); // Zatím natvrdo
+        // Uložíme URL přímo ze zdroje (NHL nám pošle tu správnou)
+        player.setHeadshotUrl(dto.getHeadshot());
 
         // Uložení
         playerRepository.save(player);
@@ -140,4 +142,53 @@ public class NhlApiService {
             }
         }
     }
+
+    public void importSeasonData() {
+        // Začátek sezóny NHL 25/26 (přibližně 4. října 2025)
+        LocalDate startDate = LocalDate.of(2025, 10, 4);
+        LocalDate today = LocalDate.now();
+
+        System.out.println("🚀 START: Hromadný import sezóny od " + startDate + " do " + today);
+
+        // Smyčka přes všechny dny
+        LocalDate currentDate = startDate;
+        while (currentDate.isBefore(today)) {
+            String dateStr = currentDate.toString(); // yyyy-MM-dd
+
+            System.out.println("📅 Zpracovávám den: " + dateStr);
+
+            // Využijeme logiku, kterou už máme pro denní update
+            // Ale musíme ji trochu upravit, abychom nekopírovali kód.
+            // Ideálně vytvořit pomocnou metodu 'processScheduleForDate(String date)'
+            processScheduleForDate(dateStr);
+
+            currentDate = currentDate.plusDays(1);
+
+            // Malá pauza, ať nezahltíme NHL servery (slušnost)
+            try { Thread.sleep(100); } catch (InterruptedException e) {}
+        }
+
+        System.out.println("🏁 KONEC: Import sezóny dokončen.");
+    }
+
+    // Tuto metodu vytvoř vyříznutím logiky z updateStatsFromYesterday
+    private void processScheduleForDate(String dateStr) {
+        String url = "https://api-web.nhle.com/v1/schedule/" + dateStr;
+        try {
+            NhlScheduleResponse response = restTemplate.getForObject(url, NhlScheduleResponse.class);
+            if (response != null && response.getGameWeek() != null) {
+                for (NhlScheduleResponse.GameWeekDto day : response.getGameWeek()) {
+                    if (day.getDate().equals(dateStr)) {
+                        for (NhlScheduleResponse.GameDto game : day.getGames()) {
+                            // Abychom nestahovali zápasy, co už máme (volitelné, ale dobré)
+                            processGame(game.getId());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Chyba importu pro " + dateStr + ": " + e.getMessage());
+        }
+    }
+
 }

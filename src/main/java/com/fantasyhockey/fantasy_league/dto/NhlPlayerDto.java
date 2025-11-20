@@ -14,6 +14,9 @@ public class NhlPlayerDto {
     @JsonProperty("firstName")
     private NameDto firstNameObj;
 
+    // NHL API vrací přímo odkaz na fotku v poli "headshot"
+    private String headshot;
+
     @JsonProperty("lastName")
     private NameDto lastNameObj;
 

@@ -1,6 +1,7 @@
 package com.fantasyhockey.fantasy_league.controller;
 
 import com.fantasyhockey.fantasy_league.model.FantasyTeam;
+import com.fantasyhockey.fantasy_league.model.LineupSpot;
 import com.fantasyhockey.fantasy_league.service.FantasyTeamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -12,7 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,18 +26,34 @@ public class TeamController {
 
     @GetMapping("/my-team")
     public String showMyTeam(Model model, Principal principal) {
-        // Principal = aktuálně přihlášený uživatel (od Spring Security)
         String username = principal.getName();
+        Optional<FantasyTeam> teamOpt = teamService.getTeamByUsername(username);
 
-        Optional<FantasyTeam> team = teamService.getTeamByUsername(username);
+        if (teamOpt.isPresent()) {
+            FantasyTeam team = teamOpt.get();
+            model.addAttribute("team", team);
 
-        if (team.isPresent()) {
-            // Uživatel už má tým -> Zobrazíme ho
-            model.addAttribute("team", team.get());
-            return "my-team"; // existující stránka
+            // 1. Získáme seznam obsazených pozic z DB
+            List<LineupSpot> spots = teamService.getTeamLineup(team);
+
+            // 2. Převedeme List na Mapu, kde klíč je Název slotu ("LW", "C"...)
+            // To nám umožní v HTML snadno dělat: lineup['LW']
+            Map<String, LineupSpot> lineupMap = spots.stream()
+                    .collect(Collectors.toMap(LineupSpot::getSlotName, spot -> spot));
+
+            model.addAttribute("lineup", lineupMap);
+
+            // Mapa: ID Hráče -> Název Slotu (např. "L1_LW")
+            Map<Long, String> activePlayerSlots = spots.stream()
+                    .collect(Collectors.toMap(
+                            s -> s.getPlayer().getId(),
+                            LineupSpot::getSlotName
+                    ));
+            model.addAttribute("activePlayerSlots", activePlayerSlots);
+
+            return "my-team";
         } else {
-            // Uživatel nemá tým -> Zobrazíme formulář pro vytvoření
-            return "create-team"; // nová stránka
+            return "create-team";
         }
     }
 

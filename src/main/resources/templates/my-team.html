@@ -1,53 +1,500 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <a href="/leaderboard" class="btn btn-warning">🏆 Žebříček</a>
-  <title>Můj Tým</title>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title>Můj Tým - Sestava</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/rink.css" rel="stylesheet">
 </head>
-<body class="container mt-5">
+<body class="bg-light">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 th:text="${team.teamName}">Název Týmu</h1>
+<div class="container-fluid mt-4"> <div class="d-flex justify-content-between align-items-center mb-3 px-4">
+  <h2>🏒 Manažer Sestavy</h2>
   <div>
-    <span class="badge bg-success fs-5" th:text="'Skóre: ' + ${team.totalFantasyPoints}">Skóre: 0</span>
-    <a href="/players" class="btn btn-outline-primary ms-2">Draftovat hráče</a>
-    <a href="/logout" class="btn btn-danger ms-2">Odhlásit</a>
+    <div class="btn-group" role="group">
+      <input type="radio" class="btn-check" name="line" id="line1" autocomplete="off" checked onclick="switchLine(1)">
+      <label class="btn btn-outline-primary" for="line1">1. Formace</label>
+
+      <input type="radio" class="btn-check" name="line" id="line2" autocomplete="off" onclick="switchLine(2)">
+      <label class="btn btn-outline-primary" for="line2">2. Formace</label>
+    </div>
+    <a href="/leaderboard" class="btn btn-outline-secondary ms-3">Zpět na Žebříček</a>
   </div>
 </div>
 
-<h3>Soupiska</h3>
-<div th:if="${team.players.empty}" class="alert alert-warning">
-  Tvůj tým je prázdný! Jdi na seznam hráčů a vyber si posily.
+  <div class="row px-4">
+
+    <div class="col-lg-8">
+      <div class="rink-container shadow relative">
+
+        <div id="line-1-container">
+
+          <div id="slot-L1_LW" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="LW" data-slot-name="L1_LW"
+               th:classappend="${lineup['L1_LW'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L1_LW'] == null}">LW 1</small>
+            <div th:if="${lineup['L1_LW'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L1_LW'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L1_LW'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L1_LW'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L1_LW'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L1_C" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="C" data-slot-name="L1_C"
+               th:classappend="${lineup['L1_C'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L1_C'] == null}">C 1</small>
+            <div th:if="${lineup['L1_C'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L1_C'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L1_C'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L1_C'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L1_C'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L1_RW" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="RW" data-slot-name="L1_RW"
+               th:classappend="${lineup['L1_RW'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L1_RW'] == null}">RW 1</small>
+            <div th:if="${lineup['L1_RW'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L1_RW'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L1_RW'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L1_RW'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L1_RW'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L1_LD" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="LD" data-slot-name="L1_LD"
+               th:classappend="${lineup['L1_LD'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L1_LD'] == null}">LD 1</small>
+            <div th:if="${lineup['L1_LD'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L1_LD'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L1_LD'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L1_LD'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L1_LD'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L1_RD" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="RD" data-slot-name="L1_RD"
+               th:classappend="${lineup['L1_RD'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L1_RD'] == null}">RD 1</small>
+            <div th:if="${lineup['L1_RD'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L1_RD'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L1_RD'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L1_RD'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L1_RD'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+        </div>
+
+
+        <div id="line-2-container" style="display: none;">
+
+          <div id="slot-L2_LW" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="LW" data-slot-name="L2_LW"
+               th:classappend="${lineup['L2_LW'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L2_LW'] == null}">LW 2</small>
+            <div th:if="${lineup['L2_LW'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L2_LW'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L2_LW'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L2_LW'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L2_LW'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L2_C" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="C" data-slot-name="L2_C"
+               th:classappend="${lineup['L2_C'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L2_C'] == null}">C 2</small>
+            <div th:if="${lineup['L2_C'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L2_C'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L2_C'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L2_C'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L2_C'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L2_RW" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="RW" data-slot-name="L2_RW"
+               th:classappend="${lineup['L2_RW'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L2_RW'] == null}">RW 2</small>
+            <div th:if="${lineup['L2_RW'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L2_RW'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L2_RW'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L2_RW'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L2_RW'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L2_LD" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="LD" data-slot-name="L2_LD"
+               th:classappend="${lineup['L2_LD'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L2_LD'] == null}">LD 2</small>
+            <div th:if="${lineup['L2_LD'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L2_LD'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L2_LD'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L2_LD'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L2_LD'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+
+          <div id="slot-L2_RD" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+               data-position="RD" data-slot-name="L2_RD"
+               th:classappend="${lineup['L2_RD'] != null} ? 'occupied' : ''">
+
+            <small class="text-muted" th:if="${lineup['L2_RD'] == null}">RD 2</small>
+            <div th:if="${lineup['L2_RD'] != null}" class="ice-player-token"
+                 th:id="'ice-token-' + ${lineup['L2_RD'].player.id}"
+                 th:data-roster-id="'roster-player-' + ${lineup['L2_RD'].player.id}">
+              <button class="remove-btn" onclick="removePlayer(this)">×</button>
+              <img th:src="${lineup['L2_RD'].player.headshotUrl}"
+                   class="ice-player-img"
+                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="ice-player-name" th:text="${lineup['L2_RD'].player.lastName}">Jméno</div>
+            </div>
+          </div>
+        </div>
+
+
+        <div id="slot-GK" class="player-slot" ondrop="drop(event)" ondragover="allowDrop(event)"
+             data-position="GK" data-slot-name="GK"
+             th:classappend="${lineup['GK'] != null} ? 'occupied' : ''">
+
+          <small class="text-muted" th:if="${lineup['GK'] == null}">GK</small>
+          <div th:if="${lineup['GK'] != null}" class="ice-player-token"
+               th:id="'ice-token-' + ${lineup['GK'].player.id}"
+               th:data-roster-id="'roster-player-' + ${lineup['GK'].player.id}">
+            <button class="remove-btn" onclick="removePlayer(this)">×</button>
+            <img th:src="${lineup['GK'].player.headshotUrl}"
+                 class="ice-player-img"
+                 onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+            <div class="ice-player-name" th:text="${lineup['GK'].player.lastName}">Jméno</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow h-100">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0">Střídačka</h5>
+        </div>
+        <div class="card-body roster-list p-2">
+
+          <div th:each="player : ${team.players}"
+               class="roster-card-modern"
+               draggable="true"
+               ondragstart="drag(event)"
+               th:id="'roster-player-' + ${player.id}"
+
+
+          th:classappend="${activePlayerSlots.containsKey(player.id)} ? 'is-assigned' : ''"
+
+
+          th:data-current-slot="${activePlayerSlots.get(player.id)}"
+          th:data-id="${player.id}"
+          th:data-name="${player.lastName}"
+          th:data-pos="${player.position}"
+          th:data-img="${player.headshotUrl}">
+
+          <div class="assigned-overlay" th:if="${activePlayerSlots.containsKey(player.id)}">
+            <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L1')}">Nasazen v 1. formaci</span>
+            <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L2')}">Nasazen v 2. formaci</span>
+            <span th:if="${activePlayerSlots.get(player.id) == 'GK'}">Nasazen v bráně</span>
+          </div>
+
+          <div class="player-info-left">
+            <img th:src="${player.headshotUrl}"
+                 alt="Foto"
+                 class="player-img-small"
+                 onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+            <div class="player-details">
+              <h6 th:text="${player.firstName.charAt(0) + '. ' + player.lastName}">Jméno</h6>
+              <div class="player-subtext">
+                <span th:text="${player.teamName}">Tým</span> •
+                <span th:text="${player.position}"
+                      th:class="${player.position == 'G'} ? 'text-warning' : 'text-primary'">POS</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="player-stats-right">
+
+            <div class="stat-box">
+              <span class="stat-value" th:text="${player.seasonGoals}">0</span>
+              <span class="stat-label">G</span>
+            </div>
+
+            <div class="stat-box">
+              <span class="stat-value" th:text="${player.seasonAssists}">0</span>
+              <span class="stat-label">A</span>
+            </div>
+
+            <div class="stat-box primary">
+              <span class="stat-value" th:text="${player.seasonPoints}">0</span>
+              <span class="stat-label">B</span>
+            </div>
+
+          </div>
+        </div>
+
+        </div>
+            </div>
+          </div>
+          </div>
+
+          <div th:if="${team.players.empty}" class="text-center mt-5 text-muted">
+            <p>Nemáš žádné hráče.</p>
+            <a href="/players" class="btn btn-primary btn-sm">Jít na Draft</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
-<table th:unless="${team.players.empty}" class="table table-bordered align-middle">
-  <thead class="table-dark">
-  <tr>
-    <th>Jméno</th>
-    <th>Pozice</th>
-    <th>Tým NHL</th>
-    <th>Akce</th> </tr>
-  </thead>
-  <tbody>
-  <tr th:each="player : ${team.players}">
-    <td th:text="${player.firstName} + ' ' + ${player.lastName}">Jméno</td>
-    <td>
-      <span th:text="${player.position}" class="badge bg-secondary">POS</span>
-    </td>
-    <td th:text="${player.teamName}">NHL Team</td>
+<script>
+  // Načtení CSRF tokenů (aby fungovalo ukládání)
+  const csrfTokenElement = document.querySelector('meta[name="_csrf"]');
+  const csrfHeaderElement = document.querySelector('meta[name="_csrf_header"]');
 
-    <td>
-      <form th:action="@{/remove-player}" method="post">
-        <input type="hidden" name="playerId" th:value="${player.id}" />
-        <button type="submit" class="btn btn-sm btn-danger">
-          Odstranit
-        </button>
-      </form>
-    </td>
-  </tr>
-  </tbody>
-</table>
+  const csrfToken = csrfTokenElement ? csrfTokenElement.getAttribute('content') : null;
+  const csrfHeader = csrfHeaderElement ? csrfHeaderElement.getAttribute('content') : null;
+
+  // Přepínání formací
+  function switchLine(lineNumber) {
+    const line1 = document.getElementById('line-1-container');
+    const line2 = document.getElementById('line-2-container');
+
+    if (lineNumber === 1) {
+      line1.style.display = 'block';
+      line2.style.display = 'none';
+    } else {
+      line1.style.display = 'none';
+      line2.style.display = 'block';
+    }
+  }
+
+  function allowDrop(ev) {
+    ev.preventDefault(); // NUTNÉ: Bez tohoto drop nefunguje!
+  }
+
+  function drag(ev) {
+    const card = ev.target.closest('.roster-card-modern'); // Najdeme hlavní kartu
+
+    ev.dataTransfer.setData("id", card.getAttribute("data-id"));
+    ev.dataTransfer.setData("name", card.getAttribute("data-name"));
+    ev.dataTransfer.setData("pos", card.getAttribute("data-pos"));
+    ev.dataTransfer.setData("img", card.getAttribute("data-img"));
+    ev.dataTransfer.setData("elementId", card.id);
+
+    console.log("Táhnu hráče: " + card.getAttribute("data-name"));
+  }
+
+  function drop(ev) {
+    ev.preventDefault();
+    var slot = ev.target.closest('.player-slot');
+    if (!slot) return;
+
+    const playerId = ev.dataTransfer.getData("id");
+    const rosterElementId = ev.dataTransfer.getData("elementId");
+    const rosterCard = document.getElementById(rosterElementId);
+
+    // Načteme kam chceme jít
+    const targetSlotName = slot.getAttribute("data-slot-name");
+    const targetGeneralPos = slot.getAttribute("data-position");
+
+    // Načteme, kde hráč PRÁVĚ TEĎ je (z atributu na kartě ve střídačce)
+    const currentSlotName = rosterCard.getAttribute("data-current-slot");
+
+    // --- 1. Validace Pozice ---
+    const playerPos = ev.dataTransfer.getData("pos");
+    if (!isPositionValid(playerPos, targetGeneralPos)) {
+      alert("Tento hráč nemůže hrát na pozici " + targetGeneralPos);
+      return;
+    }
+
+    // --- 2. Logika přesunu mezi formacemi ---
+    if (currentSlotName) {
+      // Hráč už je nasazený. Zjistíme kde.
+      const isLine1 = currentSlotName.includes('L1');
+      const targetIsLine1 = targetSlotName.includes('L1');
+
+      // Pokud se ho snažíme dát na stejné místo, nic neděláme
+      if (currentSlotName === targetSlotName) return;
+
+      // Dotaz na změnu formace
+      let message = "";
+      if (isLine1 && !targetIsLine1) message = "Hráč je v 1. formaci. Chcete ho přesunout do 2. formace?";
+      else if (!isLine1 && targetIsLine1) message = "Hráč je v 2. formaci. Chcete ho přesunout do 1. formace?";
+      else message = "Opravdu chcete hráče přesunout na jinou pozici?"; // V rámci jedné lajny
+
+      if (!confirm(message)) {
+        return; // Uživatel dal Storno
+      }
+
+      // Pokud potvrdil, musíme ho NEJDŘÍV smazat ze starého slotu
+      // 1. Najdeme starý slot na ledě (pokud je viditelný) a vyčistíme ho
+      // Poznámka: Protože máme ID slotů jako 'slot-L1_LW', můžeme ho najít
+      const oldSlotElement = document.getElementById('slot-' + currentSlotName);
+      if (oldSlotElement) {
+        // Vizuální vyčištění starého slotu
+        const generalPos = oldSlotElement.getAttribute("data-position");
+        oldSlotElement.innerHTML = `<small class="text-muted">${generalPos}</small>`;
+        oldSlotElement.classList.remove("occupied");
+      }
+
+      // 2. API volání pro smazání staré pozice
+      if (csrfToken && csrfHeader) {
+        fetch('/api/lineup/remove', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+          body: JSON.stringify({ slotName: currentSlotName })
+        });
+      }
+    }
+
+    // --- 3. Vložení na nové místo (Standardní Drop) ---
+
+    // Vyhození hráče, pokud je cílový slot obsazený
+    if (slot.classList.contains("occupied")) {
+      removePlayerFromSlot(slot);
+    }
+
+    // Vykreslení tokenu
+    const playerName = ev.dataTransfer.getData("name");
+    const playerImg = ev.dataTransfer.getData("img");
+
+    slot.innerHTML = `
+            <div class="ice-player-token" id="ice-token-${playerId}" data-roster-id="${rosterElementId}">
+                <button class="remove-btn" onclick="removePlayer(this)">×</button>
+                <img src="${playerImg}" class="ice-player-img" onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                <div class="ice-player-name">${playerName}</div>
+            </div>
+        `;
+    slot.classList.add("occupied");
+
+    // --- 4. Aktualizace Karty na Střídačce ---
+    updateRosterCardVisuals(rosterCard, targetSlotName);
+
+    // --- 5. Uložení nového stavu ---
+    if (csrfToken && csrfHeader) {
+      fetch('/api/lineup/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+        body: JSON.stringify({ playerId: playerId, slotName: targetSlotName })
+      });
+    }
+  }
+
+  // Funkce pro vizuální úpravu střídačky (Zašednutí + Text)
+  function updateRosterCardVisuals(card, slotName) {
+    card.classList.add('is-assigned');
+    card.setAttribute('data-current-slot', slotName); // Uložíme si, kde teď je
+
+    // Vytvoření textu
+    let text = "Nasazen";
+    if (slotName.includes('L1')) text = "Nasazen v 1. formaci";
+    if (slotName.includes('L2')) text = "Nasazen v 2. formaci";
+    if (slotName === 'GK') text = "Nasazen v bráně";
+
+    // Vložení overlay divu (pokud tam není)
+    let overlay = card.querySelector('.assigned-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'assigned-overlay';
+      card.appendChild(overlay);
+    }
+    overlay.innerText = text;
+  }
+
+  function isPositionValid(playerPos, slotPos) {
+    if (slotPos === 'GK' || slotPos === 'G') return playerPos === 'G';
+    if (slotPos === 'LD' || slotPos === 'RD' || slotPos === 'D') return playerPos === 'D';
+    if (['LW', 'RW', 'C'].includes(slotPos)) return playerPos !== 'D' && playerPos !== 'G';
+    return false;
+  }
+
+  // Upravená funkce Remove
+  function removePlayer(btn) {
+    const token = btn.closest('.ice-player-token');
+    const slot = token.closest('.player-slot');
+    const slotName = slot.getAttribute("data-slot-name");
+    const generalPos = slot.getAttribute("data-position");
+
+    // Reset karty na střídačce
+    const rosterId = token.getAttribute("data-roster-id");
+    const rosterCard = document.getElementById(rosterId);
+    if (rosterCard) {
+      rosterCard.classList.remove('is-assigned');
+      rosterCard.removeAttribute('data-current-slot');
+
+      // Odstranění overlay textu
+      const overlay = rosterCard.querySelector('.assigned-overlay');
+      if (overlay) overlay.remove();
+    }
+
+    // Vyčištění slotu
+    slot.innerHTML = `<small class="text-muted">${generalPos}</small>`;
+    slot.classList.remove("occupied");
+
+    // API Remove
+    if (csrfToken && csrfHeader) {
+      fetch('/api/lineup/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+        body: JSON.stringify({ slotName: slotName })
+      });
+    }
+  }
+
+  function removePlayerFromSlot(slot) {
+    const btn = slot.querySelector(".remove-btn");
+    if(btn) removePlayer(btn);
+  }
+</script>
 
 </body>
 </html>
