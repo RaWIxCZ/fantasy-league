@@ -22,30 +22,47 @@ public class NhlApiService {
     private final PointsService pointsService; // Přidat: Potřebujeme zapisovat body
     private final RestTemplate restTemplate = new RestTemplate(); // Nástroj pro volání URL
 
-    // Zatím natvrdo pro Boston (BOS), později to uděláme pro všechny
-    private final String API_URL = "https://api-web.nhle.com/v1/roster/BOS/current";
+    // Seznam všech 32 týmů NHL
+    private static final String[] NHL_TEAMS = {
+            "ANA", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL",
+            "DET", "EDM", "FLA", "LAK", "MIN", "MTL", "NSH", "NJD", "NYI", "NYR",
+            "OTT", "PHI", "PIT", "SJS", "SEA", "STL", "TBL", "TOR", "UTA", "VAN",
+            "VGK", "WSH", "WPG"
+    };
 
-    public void importRoster() {
-        // 1. Stáhneme JSON z internetu a převedeme na Java objekty
-        NhlRosterResponse response = restTemplate.getForObject(API_URL, NhlRosterResponse.class);
+    // HROMADNÝ IMPORT (Tuto metodu budeš volat z Controlleru)
+    public void importAllTeams() {
+        System.out.println("🚀 Začínám import všech týmů...");
+        for (String teamAbbrev : NHL_TEAMS) {
+            importRosterForTeam(teamAbbrev);
 
-        if (response == null) {
-            System.out.println("Chyba: Nic se nestáhlo!");
-            return;
+            // Malá pauza, abychom nedostali ban od NHL za spamování serveru
+            try { Thread.sleep(200); } catch (InterruptedException e) {}
         }
+        System.out.println("✅ Import všech týmů dokončen.");
+    }
 
-        // 2. Sloučíme všechny seznamy (útočníky, obránce, brankáře) do jednoho
-        List<NhlPlayerDto> allPlayers = new ArrayList<>();
-        allPlayers.addAll(response.getForwards());
-        allPlayers.addAll(response.getDefensemen());
-        allPlayers.addAll(response.getGoalies());
+    // Původní importRoster, ale s parametrem
+    private void importRosterForTeam(String teamAbbrev) {
+        System.out.println("Stahuji soupisku pro: " + teamAbbrev);
+        String url = "https://api-web.nhle.com/v1/roster/" + teamAbbrev + "/current";
 
-        // 3. Uložíme každého hráče do databáze
-        for (NhlPlayerDto dto : allPlayers) {
-            savePlayerToDb(dto);
+        try {
+            NhlRosterResponse response = restTemplate.getForObject(url, NhlRosterResponse.class);
+            if (response == null) return;
+
+            List<NhlPlayerDto> allPlayers = new ArrayList<>();
+            allPlayers.addAll(response.getForwards());
+            allPlayers.addAll(response.getDefensemen());
+            allPlayers.addAll(response.getGoalies());
+
+            for (NhlPlayerDto dto : allPlayers) {
+                // Posíláme zkratku týmu (teamAbbrev), kterou už máme v parametru této metody
+                savePlayerToDb(dto, teamAbbrev);
+            }
+        } catch (Exception e) {
+            System.out.println("Chyba u týmu " + teamAbbrev + ": " + e.getMessage());
         }
-
-        System.out.println("Hotovo! Uloženo " + allPlayers.size() + " hráčů.");
     }
 
     public void updateStatsFromYesterday() {
@@ -75,7 +92,7 @@ public class NhlApiService {
         }
     }
 
-    private void savePlayerToDb(NhlPlayerDto dto) {
+    private void savePlayerToDb(NhlPlayerDto dto, String teamCode) {
         // Zkontrolujeme, jestli už hráč v DB není (podle NHL ID)
         Player player = playerRepository.findByNhlId(dto.getId())
                 .orElse(new Player()); // Pokud není, vytvoříme nového. Pokud je, aktualizujeme ho.
@@ -86,8 +103,7 @@ public class NhlApiService {
         player.setFirstName(dto.getFirstNameObj().getDefaultName());
         player.setLastName(dto.getLastNameObj().getDefaultName());
         player.setPosition(dto.getPositionCode());
-        player.setTeamName("Boston Bruins"); // Zatím natvrdo
-        // Uložíme URL přímo ze zdroje (NHL nám pošle tu správnou)
+        player.setTeamName(teamCode);
         player.setHeadshotUrl(dto.getHeadshot());
 
         // Uložení
@@ -97,17 +113,14 @@ public class NhlApiService {
         String url = "https://api-web.nhle.com/v1/gamecenter/" + gameId + "/boxscore";
 
         try {
-            System.out.println("Stahuji zápas ID: " + gameId);
             NhlBoxscoreResponse response = restTemplate.getForObject(url, NhlBoxscoreResponse.class);
 
             if (response == null || response.getPlayerByGameStats() == null) {
-                System.out.println("Žádná data pro zápas " + gameId);
                 return;
             }
 
-            // Zpracujeme domácí i hosty
-            processTeamStats(response.getPlayerByGameStats().getAwayTeam());
-            processTeamStats(response.getPlayerByGameStats().getHomeTeam());
+            processTeamStats(response.getPlayerByGameStats().getAwayTeam(), gameId);
+            processTeamStats(response.getPlayerByGameStats().getHomeTeam(), gameId);
 
         } catch (Exception e) {
             System.out.println("Chyba při stahování zápasu " + gameId + ": " + e.getMessage());
@@ -115,13 +128,20 @@ public class NhlApiService {
     }
 
     // Pomocná metoda, která projde seznamy útočníků, obránců a brankářů
-    private void processTeamStats(NhlBoxscoreResponse.TeamStats teamStats) {
+    private void processTeamStats(NhlBoxscoreResponse.TeamStats teamStats, Long gameId) {
         if (teamStats == null) return;
 
         List<NhlBoxscoreResponse.PlayerStatDto> allPlayers = new ArrayList<>();
-        allPlayers.addAll(teamStats.getForwards());
-        allPlayers.addAll(teamStats.getDefensemen());
-        allPlayers.addAll(teamStats.getGoalies());
+
+        if (teamStats.getForwards() != null) {
+            allPlayers.addAll(teamStats.getForwards());
+        }
+        if (teamStats.getDefensemen() != null) {
+            allPlayers.addAll(teamStats.getDefensemen());
+        }
+        if (teamStats.getGoalies() != null) {
+            allPlayers.addAll(teamStats.getGoalies());
+        }
 
         for (NhlBoxscoreResponse.PlayerStatDto p : allPlayers) {
             // Pokud hráč bodoval (má gól nebo asistenci)
@@ -131,64 +151,67 @@ public class NhlApiService {
                 try {
                     pointsService.addStatsForPlayer(
                             p.getPlayerId(),
+                            gameId,
                             p.getGoals(),
                             p.getAssists(),
-                            LocalDate.now().minusDays(1) // Dáváme včerejší datum (simulace)
+                            LocalDate.now() // Tady ideálně parsovat datum ze zápasu, ale now() pro opravu stačí
                     );
                 } catch (Exception e) {
-                    // Hráče nemáme v DB, ignorujeme ho (nebo bychom ho mohli importovat)
-                    // System.out.println("Neznámý hráč ID: " + p.getPlayerId());
+                    System.out.println("⚠️ CHYBA u hráče ID " + p.getPlayerId() + ": " + e.getMessage());
                 }
             }
         }
     }
 
     public void importSeasonData() {
-        // Začátek sezóny NHL 25/26 (přibližně 4. října 2025)
-        LocalDate startDate = LocalDate.of(2025, 10, 4);
-        LocalDate today = LocalDate.now();
+        // Začátek sezóny NHL 25/26 (7. října 2025)
+        LocalDate startDate = LocalDate.of(2025, 10, 7);
+        LocalDate today = LocalDate.now(); // Dnešek
 
-        System.out.println("🚀 START: Hromadný import sezóny od " + startDate + " do " + today);
+        System.out.println("🚀 START: Bezpečný hromadný import sezóny od " + startDate + " do " + today);
 
-        // Smyčka přes všechny dny
         LocalDate currentDate = startDate;
-        while (currentDate.isBefore(today)) {
-            String dateStr = currentDate.toString(); // yyyy-MM-dd
 
+        // 1. SMYČKA PŘES DNY
+        while (currentDate.isBefore(today) || currentDate.equals(today)) {
+            String dateStr = currentDate.toString(); // yyyy-MM-dd
             System.out.println("📅 Zpracovávám den: " + dateStr);
 
-            // Využijeme logiku, kterou už máme pro denní update
-            // Ale musíme ji trochu upravit, abychom nekopírovali kód.
-            // Ideálně vytvořit pomocnou metodu 'processScheduleForDate(String date)'
             processScheduleForDate(dateStr);
 
             currentDate = currentDate.plusDays(1);
 
-            // Malá pauza, ať nezahltíme NHL servery (slušnost)
-            try { Thread.sleep(100); } catch (InterruptedException e) {}
+            // PAUZA MEZI DNY (1 sekunda)
+            // Dáváme serveru čas na vydechnutí
+            try { Thread.sleep(1000); } catch (InterruptedException e) {}
         }
 
         System.out.println("🏁 KONEC: Import sezóny dokončen.");
     }
 
-    // Tuto metodu vytvoř vyříznutím logiky z updateStatsFromYesterday
     private void processScheduleForDate(String dateStr) {
         String url = "https://api-web.nhle.com/v1/schedule/" + dateStr;
         try {
             NhlScheduleResponse response = restTemplate.getForObject(url, NhlScheduleResponse.class);
+
             if (response != null && response.getGameWeek() != null) {
                 for (NhlScheduleResponse.GameWeekDto day : response.getGameWeek()) {
                     if (day.getDate().equals(dateStr)) {
+
+                        // 2. SMYČKA PŘES ZÁPASY V TOM DNI
                         for (NhlScheduleResponse.GameDto game : day.getGames()) {
-                            // Abychom nestahovali zápasy, co už máme (volitelné, ale dobré)
+                            // Zavoláme logiku pro stažení Boxscore a uložení bodů
                             processGame(game.getId());
+
+                            // PAUZA MEZI ZÁPASY (300 ms)
+                            // Abychom neposlali 10 requestů v jedné milisekundě
+                            try { Thread.sleep(300); } catch (InterruptedException e) {}
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            System.out.println("Chyba importu pro " + dateStr + ": " + e.getMessage());
+            System.out.println("⚠️ Chyba importu pro " + dateStr + ": " + e.getMessage());
         }
     }
-
 }

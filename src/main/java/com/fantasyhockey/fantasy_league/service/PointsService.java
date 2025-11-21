@@ -26,18 +26,25 @@ public class PointsService {
     private static final int POINTS_PER_ASSIST = 3;
 
     @Transactional
-    public void addStatsForPlayer(Long playerId, int goals, int assists, LocalDate date) {
-        // 1. Najdeme hráče
-        // Hledáme podle sloupce nhlId, který jsme definovali v Repository už na začátku
-        Player player = playerRepository.findByNhlId(playerId)
-                .orElseThrow(() -> new RuntimeException("Hráč nenalezen"));
+    // Přidán parametr gameId
+    public void addStatsForPlayer(Long nhlPlayerId, Long gameId, int goals, int assists, LocalDate date) {
 
-        // 2. Spočítáme fantasy body
+        Player player = playerRepository.findByNhlId(nhlPlayerId)
+                .orElseThrow(() -> new RuntimeException("Hráč nenalezen ID: " + nhlPlayerId));
+
+        // 1. KONTROLA DUPLICITY (Ochrana proti Pastrňákově 58 bodům)
+        if (statsRepository.existsByPlayerIdAndGameId(player.getId(), gameId)) {
+            System.out.println("⚠️ Zápas " + gameId + " už byl pro hráče " + player.getLastName() + " započítán. Přeskakuji.");
+            return;
+        }
+
+        // 2. Výpočet bodů
         int fantasyPoints = (goals * POINTS_PER_GOAL) + (assists * POINTS_PER_ASSIST);
 
-        // 3. Uložíme záznam do historie (PlayerStats)
+        // 3. Uložení
         PlayerStats stats = new PlayerStats();
         stats.setPlayer(player);
+        stats.setGameId(gameId); // Uložíme ID zápasu
         stats.setDate(date);
         stats.setGoals(goals);
         stats.setAssists(assists);
@@ -45,21 +52,15 @@ public class PointsService {
 
         statsRepository.save(stats);
 
-        // 4. Aktualizujeme skóre všem fantasy týmům, které tohoto hráče mají
-        // Tohle je trochu pokročilejší SQL logika, ale uděláme to jednoduše v Javě:
-
-        // Najdeme všechny týmy (v reálu bychom dělali efektivnější dotaz, ale pro začátek OK)
+        // 4. Aktualizace týmu
         List<FantasyTeam> allTeams = teamRepository.findAll();
-
         for (FantasyTeam team : allTeams) {
-            // Pokud tým obsahuje tohoto hráče
             if (team.getPlayers().contains(player)) {
-                // Přičteme body k celkovému skóre
                 team.setTotalFantasyPoints(team.getTotalFantasyPoints() + fantasyPoints);
                 teamRepository.save(team);
             }
         }
 
-        System.out.println("Body přičteny! Hráč: " + player.getLastName() + ", Body: " + fantasyPoints);
+        System.out.println("✅ Body započteny: " + player.getLastName() + " (" + fantasyPoints + "b)");
     }
 }

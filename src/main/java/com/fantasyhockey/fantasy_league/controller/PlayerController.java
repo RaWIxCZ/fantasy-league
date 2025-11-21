@@ -1,10 +1,14 @@
 package com.fantasyhockey.fantasy_league.controller;
 
+import com.fantasyhockey.fantasy_league.model.Player;
 import com.fantasyhockey.fantasy_league.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -12,16 +16,25 @@ public class PlayerController {
 
     private final PlayerRepository playerRepository;
 
-    @GetMapping("/players") // Když uživatel zadá localhost:8080/players
-    public String listPlayers(Model model) {
-        // 1. Získáme seznam všech hráčů z databáze
-        var allPlayers = playerRepository.findAll();
+    @GetMapping("/players")
+    public String listPlayers(
+            @RequestParam(name = "team", required = false) String selectedTeam,
+            Model model) {
 
-        // 2. Vložíme je do "modelu" (balíček dat pro HTML stránku)
-        // "playersList" je název, pod kterým to budeme volat v HTML
-        model.addAttribute("playersList", allPlayers);
+        // 1. Načteme seznam týmů pro roletku
+        List<String> allTeams = playerRepository.findDistinctTeamNames();
+        model.addAttribute("teamList", allTeams);
 
-        // 3. Řekneme Springu, ať zobrazí šablonu s názvem "players" (players.html)
+        // 2. Pokud uživatel vybral tým, načteme hráče
+        if (selectedTeam != null && !selectedTeam.isEmpty()) {
+            List<Player> players = playerRepository.findByTeamNameOrderByLastNameAsc(selectedTeam);
+            model.addAttribute("playersList", players);
+            model.addAttribute("selectedTeam", selectedTeam); // Aby roletka zůstala vybraná
+        } else {
+            // Pokud nic nevybral, pošleme prázdný seznam (nebo null)
+            model.addAttribute("playersList", List.of());
+        }
+
         return "players";
     }
 }

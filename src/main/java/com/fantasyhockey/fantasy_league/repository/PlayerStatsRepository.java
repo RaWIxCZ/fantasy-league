@@ -7,5 +7,9 @@ import java.util.List;
 
 @Repository
 public interface PlayerStatsRepository extends JpaRepository<PlayerStats, Long> {
+
     List<PlayerStats> findByPlayerId(Long playerId);
+
+    // Kontrola duplicity
+    boolean existsByPlayerIdAndGameId(Long playerId, Long gameId);
 }

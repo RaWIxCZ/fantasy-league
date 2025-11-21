@@ -25,6 +25,9 @@ public class PlayerStats {
     // Kdy se zápas hrál?
     private LocalDate date;
 
+    // Musíme si pamatovat ID zápasu z NHL, abychom ho nenačítali 2x
+    private Long gameId;
+
     // Statistiky z toho zápasu
     private int goals;
     private int assists;

@@ -18,26 +18,38 @@ public class AdminController {
     private final PointsService pointsService;
     private final NhlApiService nhlApiService;
 
-    // Endpoint pro simulaci bodů (ruční)
+    // ENDPOINT: Simulace bodů (ruční)
     @PostMapping("/admin/add-points")
     public String simulatePoints(
             @RequestParam("playerId") Long playerId,
             @RequestParam("goals") int goals,
             @RequestParam("assists") int assists) {
 
-        pointsService.addStatsForPlayer(playerId, goals, assists, LocalDate.now());
+        // Vygenerujeme unikátní falešné ID (např. aktuální čas),
+        // aby to prošlo kontrolou duplicity v PointsService
+        Long fakeGameId = System.currentTimeMillis();
+
+        // Teď posíláme 5 parametrů:
+        pointsService.addStatsForPlayer(
+                playerId,
+                fakeGameId, // <--- Nový parametr (falešné ID)
+                goals,
+                assists,
+                LocalDate.now()
+        );
+
         return "redirect:/my-team";
     }
 
-    // Endpoint pro stažení jednoho zápasu
-    @PostMapping("/admin/fetch-game")
+    // ENDPOINT: Stažení jednoho zápasu
+    @GetMapping("/admin/fetch-game")
     @ResponseBody
     public String fetchGameStats(@RequestParam("gameId") Long gameId) {
         nhlApiService.processGame(gameId);
         return "Zápas " + gameId + " zpracován!";
     }
 
-    // NOVÝ ENDPOINT: Import celé sezóny
+    // ENDPOINT: Import celé sezóny
     @GetMapping("/admin/import-season")
     @ResponseBody
     public String triggerSeasonImport() {
@@ -45,4 +57,14 @@ public class AdminController {
         new Thread(() -> nhlApiService.importSeasonData()).start();
         return "🚀 Import sezóny spuštěn na pozadí! Sleduj konzoli v IntelliJ.";
     }
+
+    // NOVÝ ENDPOINT: Import celé sezóny
+    @GetMapping("/admin/import-all-teams")
+    @ResponseBody
+    public String triggerAllTeamsImport() {
+        // Spustíme to ve vedlejším vlákně, aby nezamrzla stránka
+        new Thread(() -> nhlApiService.importAllTeams()).start();
+        return "🚀 Import sezóny spuštěn na pozadí! Sleduj konzoli v IntelliJ.";
+    }
+
 }

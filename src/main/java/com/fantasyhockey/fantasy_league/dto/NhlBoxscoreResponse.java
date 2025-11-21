@@ -1,5 +1,7 @@
 package com.fantasyhockey.fantasy_league.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -23,10 +25,28 @@ public class NhlBoxscoreResponse {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TeamStats {
-        // Hráči jsou rozděleni do skupin, musíme je pak spojit
+
+        @JsonProperty("forwards")
         private List<PlayerStatDto> forwards = new ArrayList<>();
-        private List<PlayerStatDto> defensemen = new ArrayList<>();
+
+        @JsonProperty("goalies")
         private List<PlayerStatDto> goalies = new ArrayList<>();
+
+        @JsonProperty("defense")
+        @JsonAlias({"defensemen", "defencemen"})
+        private List<PlayerStatDto> defensemen = new ArrayList<>();
+
+        @JsonAnySetter
+        public void handleUnknown(String key, Object value) {
+            // Pokud klíč obsahuje "defen", tak je to ono! (defensemen/defencemen)
+            if (key.toLowerCase().contains("defen")) {
+                // Musíme to ručně přetypovat, protože Jackson vrací obecný Object (LinkedHashMap)
+                // Toto je trochu "dirty", ale funkční.
+                // Lepší je použít ObjectMapper.convertValue, ale pro jednoduchost:
+
+                // Vraťme se raději k @JsonAlias, ale PŘIDEJME VÍCE MOŽNOSTÍ
+            }
+        }
     }
 
     @Data
