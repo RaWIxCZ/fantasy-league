@@ -1,81 +1,85 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <title>Draft Hráčů</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="container mt-5">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Draft: Seznam Hráčů</h1>
-    <a href="/my-team" class="btn btn-secondary">Zpět na Můj Tým</a>
-</div>
+<body class="bg-light">
 
-<div class="card p-3 mb-4 bg-light">
-    <form action="/players" method="get" class="row g-3 align-items-center">
-        <div class="col-auto">
-            <label for="teamSelect" class="col-form-label fw-bold">Vyber tým NHL:</label>
+    <div th:replace="~{fragments :: nav}"></div>
+
+    <div class="container mt-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Draft: Seznam Hráčů</h1>
         </div>
-        <div class="col-auto">
-            <select name="team" id="teamSelect" class="form-select" onchange="this.form.submit()">
-                <option value="">-- Zvolte tým --</option>
-                <option th:each="team : ${teamList}"
-                        th:value="${team}"
-                        th:text="${team}"
-                        th:selected="${team == selectedTeam}">
-                    Boston Bruins
-                </option>
-            </select>
-        </div>
-    </form>
-</div>
 
-<div th:if="${#lists.isEmpty(playersList)}" class="alert alert-info text-center">
-    👆 Pro zobrazení hráčů vyberte tým z nabídky nahoře.
-</div>
-
-<table th:unless="${#lists.isEmpty(playersList)}" class="table table-striped table-hover align-middle">
-    <thead class="table-dark">
-    <tr>
-        <th>Foto</th> <th>Jméno</th>
-        <th>Tým</th>
-        <th>Pozice</th>
-        <th>Body</th> <th>Akce</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="player : ${playersList}">
-        <td>
-            <img th:src="${player.headshotUrl}"
-                 class="rounded-circle"
-                 style="width: 40px; height: 40px; object-fit: cover;"
-                 onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
-        </td>
-
-        <td th:text="${player.firstName} + ' ' + ${player.lastName}">Jméno</td>
-        <td th:text="${player.teamName}">Tým</td>
-
-        <td>
-                    <span th:text="${player.position}"
-                          class="badge"
-                          th:classappend="${player.position == 'G'} ? 'bg-warning text-dark' : 'bg-secondary'">
-                        POS
-                    </span>
-        </td>
-
-        <td class="fw-bold" th:text="${player.seasonPoints}">0</td>
-
-        <td>
-            <form th:action="@{/add-player}" method="post">
-                <input type="hidden" name="playerId" th:value="${player.id}" />
-                <button type="submit" class="btn btn-sm btn-success fw-bold">
-                    + Draft
-                </button>
+        <div class="card p-3 mb-4 bg-light">
+            <form action="/players" method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="teamSelect" class="col-form-label fw-bold">Vyber tým NHL:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="team" id="teamSelect" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- Zvolte tým --</option>
+                        <option th:each="team : ${teamList}" th:value="${team}" th:text="${team}"
+                            th:selected="${team == selectedTeam}">
+                            Boston Bruins
+                        </option>
+                    </select>
+                </div>
             </form>
-        </td>
-    </tr>
-    </tbody>
-</table>
+        </div>
+
+        <div th:if="${#lists.isEmpty(playersList)}" class="alert alert-info text-center">
+            👆 Pro zobrazení hráčů vyberte tým z nabídky nahoře.
+        </div>
+
+        <table th:unless="${#lists.isEmpty(playersList)}" class="table table-striped table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Foto</th>
+                    <th>Jméno</th>
+                    <th>Tým</th>
+                    <th>Pozice</th>
+                    <th>Body</th>
+                    <th>Akce</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="player : ${playersList}">
+                    <td>
+                        <img th:src="${player.headshotUrl}" class="rounded-circle"
+                            style="width: 40px; height: 40px; object-fit: cover;"
+                            onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                    </td>
+
+                    <td th:text="${player.firstName} + ' ' + ${player.lastName}">Jméno</td>
+                    <td th:text="${player.teamName}">Tým</td>
+
+                    <td>
+                        <span th:text="${player.position}" class="badge"
+                            th:classappend="${player.position == 'G'} ? 'bg-warning text-dark' : 'bg-secondary'">
+                            POS
+                        </span>
+                    </td>
+
+                    <td class="fw-bold" th:text="${player.seasonPoints}">0</td>
+
+                    <td>
+                        <form th:action="@{/add-player}" method="post">
+                            <input type="hidden" name="playerId" th:value="${player.id}" />
+                            <button type="submit" class="btn btn-sm btn-success fw-bold">
+                                + Draft
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
 
 </body>
+
 </html>

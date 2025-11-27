@@ -13,9 +13,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 @RequiredArgsConstructor
 public class PointsService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PointsService.class);
 
     private final PlayerRepository playerRepository;
     private final PlayerStatsRepository statsRepository;
@@ -24,10 +29,12 @@ public class PointsService {
     // Nastavení bodování
     private static final int POINTS_PER_GOAL = 5;
     private static final int POINTS_PER_ASSIST = 3;
-    private static final int POINTS_PER_SAVE = 1;
-    private static final int POINTS_PER_WIN = 10;
-    private static final int POINTS_PER_SHUTOUT = 15;
 
+    // Brankáři (Rebalance)
+    private static final double POINTS_PER_SAVE = 0.2;
+    private static final int POINTS_PER_WIN = 4;
+    private static final int POINTS_PER_SHUTOUT = 3;
+    private static final int POINTS_PER_GOAL_AGAINST = -1;
 
     @Transactional
     // Přidán parametr gameId
@@ -38,7 +45,7 @@ public class PointsService {
 
         // 1. KONTROLA DUPLICITY (Ochrana proti Pastrňákově 58 bodům)
         if (statsRepository.existsByPlayerIdAndGameId(player.getId(), gameId)) {
-            System.out.println("⚠️ Zápas " + gameId + " už byl pro hráče " + player.getLastName() + " započítán. Přeskakuji.");
+            logger.warn("⚠️ Zápas {} už byl pro hráče {} započítán. Přeskakuji.", gameId, player.getLastName());
             return;
         }
 
@@ -65,29 +72,39 @@ public class PointsService {
             }
         }
 
-        System.out.println("✅ Body započteny: " + player.getLastName() + " (" + fantasyPoints + "b)");
+        logger.info("✅ Body započteny: {} ({}b)", player.getLastName(), fantasyPoints);
     }
 
     @Transactional
-    public void addGoalieStatsForPlayer(Long nhlPlayerId, Long gameId, int saves, int shotsAgainst, boolean isWinner, LocalDate date) {
+    public void addGoalieStatsForPlayer(Long nhlPlayerId, Long gameId, int saves, int shotsAgainst, boolean isWinner,
+            LocalDate date) {
         Player player = playerRepository.findByNhlId(nhlPlayerId)
                 .orElseThrow(() -> new RuntimeException("Brankář nenalezen ID: " + nhlPlayerId));
 
         if (statsRepository.existsByPlayerIdAndGameId(player.getId(), gameId)) {
-            System.out.println("⚠️ Zápas " + gameId + " už byl pro brankáře " + player.getLastName() + " započítán. Přeskakuji.");
+            logger.warn("⚠️ Zápas {} už byl pro brankáře {} započítán. Přeskakuji.", gameId, player.getLastName());
             return;
         }
 
         int goalsAgainst = shotsAgainst - saves;
         boolean isShutout = (goalsAgainst == 0 && shotsAgainst > 0);
 
-        int fantasyPoints = (saves * POINTS_PER_SAVE);
+        // Výpočet bodů pro brankáře
+        // Zákroky (např. 30 * 0.2 = 6 bodů)
+        double points = (saves * POINTS_PER_SAVE);
+
+        // Inkasované góly (např. 2 * -1 = -2 body)
+        points += (goalsAgainst * POINTS_PER_GOAL_AGAINST);
+
         if (isWinner) {
-            fantasyPoints += POINTS_PER_WIN;
+            points += POINTS_PER_WIN;
         }
         if (isShutout) {
-            fantasyPoints += POINTS_PER_SHUTOUT;
+            points += POINTS_PER_SHUTOUT;
         }
+
+        // Zaokrouhlení na celé číslo (int)
+        int fantasyPoints = (int) Math.round(points);
 
         PlayerStats stats = new PlayerStats();
         stats.setPlayer(player);
@@ -109,6 +126,6 @@ public class PointsService {
             }
         }
 
-        System.out.println("✅ Body započteny pro brankáře: " + player.getLastName() + " (" + fantasyPoints + "b)");
+        logger.info("✅ Body započteny pro brankáře: {} ({}b)", player.getLastName(), fantasyPoints);
     }
 }

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+    <nav th:fragment="nav" class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center me-4" href="/">
+                <img src="/images/logo.webp" alt="Logo" width="40" height="40" class="me-2 rounded-circle"
+                    style="object-fit: contain;">
+                <span class="fw-bold">Bečkovická Fantasy Liga - NHL</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${requestURI == '/my-team' ? 'active' : ''}"
+                            href="/my-team">Můj Tým</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:classappend="${requestURI == '/leaderboard' ? 'active' : ''}"
+                            href="/leaderboard">Tabulka</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-link nav-link"
+                                style="text-decoration: none;">Odhlásit</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+</body>
+
+</html>

@@ -8,7 +8,6 @@ public class HomeController {
 
     @GetMapping("/") // Toto odchytí adresu localhost:8080/ (bez ničeho dalšího)
     public String home() {
-        // Přesměrujeme uživatele rovnou na dashboard týmu
-        return "redirect:/my-team";
+        return "homepage";
     }
 }

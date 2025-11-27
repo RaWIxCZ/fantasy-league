@@ -22,17 +22,22 @@ import java.util.Map;
 public class NhlApiService {
 
     private static final Logger logger = LoggerFactory.getLogger(NhlApiService.class);
-    private final PlayerRepository playerRepository;
-    private final PointsService pointsService;
-    private final EspnScraperService espnScraperService;
-    private final RestTemplate restTemplate = new RestTemplate();
-
     private static final String[] NHL_TEAMS = {
             "ANA", "BOS", "BUF", "CGY", "CAR", "CHI", "COL", "CBJ", "DAL",
             "DET", "EDM", "FLA", "LAK", "MIN", "MTL", "NSH", "NJD", "NYI", "NYR",
             "OTT", "PHI", "PIT", "SJS", "SEA", "STL", "TBL", "TOR", "UTA", "VAN",
             "VGK", "WSH", "WPG"
     };
+
+    private static final int DELAY_BETWEEN_TEAMS_MS = 200;
+    private static final int DELAY_BETWEEN_DAYS_MS = 1000;
+    private static final int DELAY_BETWEEN_GAMES_MS = 300;
+    private static final LocalDate SEASON_START_DATE = LocalDate.of(2025, 10, 7);
+
+    private final PlayerRepository playerRepository;
+    private final PointsService pointsService;
+    private final EspnScraperService espnScraperService;
+    private final RestTemplate restTemplate;
 
     public void importAllTeams() {
         logger.info("🚀 Začínám import všech týmů...");
@@ -41,9 +46,10 @@ public class NhlApiService {
         for (String teamAbbrev : NHL_TEAMS) {
             importRosterForTeam(teamAbbrev);
             try {
-                Thread.sleep(200);
+                Thread.sleep(DELAY_BETWEEN_TEAMS_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                logger.warn("Import interrupted while waiting between teams", e);
             }
         }
         logger.info("✅ Import všech týmů dokončen.");
@@ -55,7 +61,8 @@ public class NhlApiService {
 
         try {
             NhlRosterResponse response = restTemplate.getForObject(url, NhlRosterResponse.class);
-            if (response == null) return;
+            if (response == null)
+                return;
 
             List<NhlPlayerDto> allPlayers = new ArrayList<>();
             allPlayers.addAll(response.getForwards());
@@ -114,7 +121,12 @@ public class NhlApiService {
         player.setNhlId(dto.getId());
         player.setFirstName(dto.getFirstNameObj().getDefaultName());
         player.setLastName(dto.getLastNameObj().getDefaultName());
-        player.setPosition(dto.getPositionCode());
+        String pos = dto.getPositionCode();
+        if ("L".equals(pos))
+            pos = "LW";
+        if ("R".equals(pos))
+            pos = "RW";
+        player.setPosition(pos);
         player.setTeamName(teamCode);
         player.setHeadshotUrl(dto.getHeadshot());
 
@@ -131,8 +143,10 @@ public class NhlApiService {
                 return;
             }
 
-            processTeamStats(response.getPlayerByGameStats().getAwayTeam(), gameId, response.getAwayTeam().getScore() > response.getHomeTeam().getScore());
-            processTeamStats(response.getPlayerByGameStats().getHomeTeam(), gameId, response.getHomeTeam().getScore() > response.getAwayTeam().getScore());
+            processTeamStats(response.getPlayerByGameStats().getAwayTeam(), gameId,
+                    response.getAwayTeam().getScore() > response.getHomeTeam().getScore());
+            processTeamStats(response.getPlayerByGameStats().getHomeTeam(), gameId,
+                    response.getHomeTeam().getScore() > response.getAwayTeam().getScore());
 
         } catch (Exception e) {
             logger.error("Chyba při stahování zápasu {}: {}", gameId, e.getMessage());
@@ -140,7 +154,8 @@ public class NhlApiService {
     }
 
     private void processTeamStats(NhlBoxscoreResponse.TeamStats teamStats, Long gameId, boolean isWinner) {
-        if (teamStats == null) return;
+        if (teamStats == null)
+            return;
 
         List<NhlBoxscoreResponse.PlayerStatDto> skaters = new ArrayList<>();
         if (teamStats.getForwards() != null) {
@@ -158,8 +173,7 @@ public class NhlApiService {
                             gameId,
                             p.getGoals(),
                             p.getAssists(),
-                            LocalDate.now()
-                    );
+                            LocalDate.now());
                 } catch (Exception e) {
                     logger.warn("⚠️ CHYBA u hráče ID {}: {}", p.getPlayerId(), e.getMessage());
                 }
@@ -175,8 +189,7 @@ public class NhlApiService {
                             g.getSaves(),
                             g.getShotsAgainst(),
                             isWinner,
-                            LocalDate.now()
-                    );
+                            LocalDate.now());
                 } catch (Exception e) {
                     logger.warn("⚠️ CHYBA u brankáře ID {}: {}", g.getPlayerId(), e.getMessage());
                 }
@@ -185,7 +198,7 @@ public class NhlApiService {
     }
 
     public void importSeasonData() {
-        LocalDate startDate = LocalDate.of(2025, 10, 7);
+        LocalDate startDate = SEASON_START_DATE;
         LocalDate today = LocalDate.now();
 
         logger.info("🚀 START: Bezpečný hromadný import sezóny od {} do {}", startDate, today);
@@ -201,9 +214,10 @@ public class NhlApiService {
             currentDate = currentDate.plusDays(1);
 
             try {
-                Thread.sleep(1000);
+                Thread.sleep(DELAY_BETWEEN_DAYS_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                logger.warn("Import interrupted while waiting between days", e);
             }
         }
 
@@ -221,9 +235,10 @@ public class NhlApiService {
                         for (NhlScheduleResponse.GameDto game : day.getGames()) {
                             processGame(game.getId());
                             try {
-                                Thread.sleep(300);
+                                Thread.sleep(DELAY_BETWEEN_GAMES_MS);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
+                                logger.warn("Import interrupted while waiting between games", e);
                             }
                         }
                     }

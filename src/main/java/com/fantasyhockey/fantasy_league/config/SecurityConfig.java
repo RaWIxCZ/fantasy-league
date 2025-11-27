@@ -18,14 +18,12 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((requests) -> requests
                         // Tyto stránky povolíme všem (i nepřihlášeným):
-                        .requestMatchers("/register", "/save-user", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/register", "/save-user", "/css/**", "/js/**", "/images/**").permitAll()
                         // Všechno ostatní vyžaduje přihlášení:
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .formLogin((form) -> form
                         .loginPage("/login") // Naše vlastní přihlašovací stránka (zatím ji nemáme)
-                        .permitAll()
-                )
+                        .permitAll())
                 .logout((logout) -> logout.permitAll());
 
         return http.build();
