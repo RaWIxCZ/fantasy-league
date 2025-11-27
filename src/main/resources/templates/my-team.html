@@ -36,6 +36,7 @@
 
             <small class="text-muted" th:if="${lineup['L1_LW'] == null}">LW 1</small>
             <div th:if="${lineup['L1_LW'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L1_LW'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L1_LW'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
@@ -52,6 +53,7 @@
 
             <small class="text-muted" th:if="${lineup['L1_C'] == null}">C 1</small>
             <div th:if="${lineup['L1_C'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L1_C'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L1_C'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
@@ -68,6 +70,7 @@
 
             <small class="text-muted" th:if="${lineup['L1_RW'] == null}">RW 1</small>
             <div th:if="${lineup['L1_RW'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L1_RW'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L1_RW'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
@@ -84,6 +87,7 @@
 
             <small class="text-muted" th:if="${lineup['L1_LD'] == null}">LD 1</small>
             <div th:if="${lineup['L1_LD'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L1_LD'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L1_LD'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
@@ -100,6 +104,7 @@
 
             <small class="text-muted" th:if="${lineup['L1_RD'] == null}">RD 1</small>
             <div th:if="${lineup['L1_RD'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L1_RD'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L1_RD'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
@@ -120,12 +125,13 @@
 
             <small class="text-muted" th:if="${lineup['L2_LW'] == null}">LW 2</small>
             <div th:if="${lineup['L2_LW'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L2_LW'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L2_LW'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
               <img th:src="${lineup['L2_LW'].player.headshotUrl}"
                    class="ice-player-img"
-                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                   onerror="this.onerror=null; this.src='https.nhle.com/mugs/nhl/default-skater.png';">
               <div class="ice-player-name" th:text="${lineup['L2_LW'].player.lastName}">Jméno</div>
             </div>
           </div>
@@ -136,12 +142,13 @@
 
             <small class="text-muted" th:if="${lineup['L2_C'] == null}">C 2</small>
             <div th:if="${lineup['L2_C'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L2_C'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L2_C'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
               <img th:src="${lineup['L2_C'].player.headshotUrl}"
                    class="ice-player-img"
-                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                   onerror="this.onerror=null; this.src='https.nhle.com/mugs/nhl/default-skater.png';">
               <div class="ice-player-name" th:text="${lineup['L2_C'].player.lastName}">Jméno</div>
             </div>
           </div>
@@ -152,12 +159,13 @@
 
             <small class="text-muted" th:if="${lineup['L2_RW'] == null}">RW 2</small>
             <div th:if="${lineup['L2_RW'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L2_RW'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L2_RW'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
               <img th:src="${lineup['L2_RW'].player.headshotUrl}"
                    class="ice-player-img"
-                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                   onerror="this.onerror=null; this.src='https.nhle.com/mugs/nhl/default-skater.png';">
               <div class="ice-player-name" th:text="${lineup['L2_RW'].player.lastName}">Jméno</div>
             </div>
           </div>
@@ -168,12 +176,13 @@
 
             <small class="text-muted" th:if="${lineup['L2_LD'] == null}">LD 2</small>
             <div th:if="${lineup['L2_LD'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L2_LD'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L2_LD'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
               <img th:src="${lineup['L2_LD'].player.headshotUrl}"
                    class="ice-player-img"
-                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                   onerror="this.onerror=null; this.src='https.nhle.com/mugs/nhl/default-skater.png';">
               <div class="ice-player-name" th:text="${lineup['L2_LD'].player.lastName}">Jméno</div>
             </div>
           </div>
@@ -184,12 +193,13 @@
 
             <small class="text-muted" th:if="${lineup['L2_RD'] == null}">RD 2</small>
             <div th:if="${lineup['L2_RD'] != null}" class="ice-player-token"
+                 draggable="true" ondragstart="dragToken(event)"
                  th:id="'ice-token-' + ${lineup['L2_RD'].player.id}"
                  th:data-roster-id="'roster-player-' + ${lineup['L2_RD'].player.id}">
               <button class="remove-btn" onclick="removePlayer(this)">×</button>
               <img th:src="${lineup['L2_RD'].player.headshotUrl}"
                    class="ice-player-img"
-                   onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                   onerror="this.onerror=null; this.src='https.nhle.com/mugs/nhl/default-skater.png';">
               <div class="ice-player-name" th:text="${lineup['L2_RD'].player.lastName}">Jméno</div>
             </div>
           </div>
@@ -202,12 +212,13 @@
 
           <small class="text-muted" th:if="${lineup['GK'] == null}">GK</small>
           <div th:if="${lineup['GK'] != null}" class="ice-player-token"
+               draggable="true" ondragstart="dragToken(event)"
                th:id="'ice-token-' + ${lineup['GK'].player.id}"
                th:data-roster-id="'roster-player-' + ${lineup['GK'].player.id}">
             <button class="remove-btn" onclick="removePlayer(this)">×</button>
             <img th:src="${lineup['GK'].player.headshotUrl}"
                  class="ice-player-img"
-                 onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                 onerror="this.onerror=null; this.src='https.nhle.com/mugs/nhl/default-skater.png';">
             <div class="ice-player-name" th:text="${lineup['GK'].player.lastName}">Jméno</div>
           </div>
         </div>
@@ -221,66 +232,135 @@
         </div>
         <div class="card-body roster-list p-2">
 
-          <div th:each="player : ${team.players}"
-               class="roster-card-modern"
-               draggable="true"
-               ondragstart="drag(event)"
-               th:id="'roster-player-' + ${player.id}"
-
-
-          th:classappend="${activePlayerSlots.containsKey(player.id)} ? 'is-assigned' : ''"
-
-
-          th:data-current-slot="${activePlayerSlots.get(player.id)}"
-          th:data-id="${player.id}"
-          th:data-name="${player.lastName}"
-          th:data-pos="${player.position}"
-          th:data-img="${player.headshotUrl}">
-
-          <div class="assigned-overlay" th:if="${activePlayerSlots.containsKey(player.id)}">
-            <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L1')}">Nasazen v 1. formaci</span>
-            <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L2')}">Nasazen v 2. formaci</span>
-            <span th:if="${activePlayerSlots.get(player.id) == 'GK'}">Nasazen v bráně</span>
-          </div>
-
-          <div class="player-info-left">
-            <img th:src="${player.headshotUrl}"
-                 alt="Foto"
-                 class="player-img-small"
-                 onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
-            <div class="player-details">
-              <h6 th:text="${player.firstName.charAt(0) + '. ' + player.lastName}">Jméno</h6>
-              <div class="player-subtext">
-                <span th:text="${player.teamName}">Tým</span> •
-                <span th:text="${player.position}"
-                      th:class="${player.position == 'G'} ? 'text-warning' : 'text-primary'">POS</span>
+          <!-- Útočníci -->
+          <h6 class="roster-category-header">Útočníci</h6>
+          <div th:each="player : ${team.players}" th:if="${player.position == 'LW' or player.position == 'C' or player.position == 'RW'}"
+               class="roster-card-modern" draggable="true" ondragstart="drag(event)" th:id="'roster-player-' + ${player.id}"
+               th:classappend="(${activePlayerSlots.containsKey(player.id)} ? 'is-assigned' : '') + (${player.injured} ? ' is-injured' : '')"
+               th:data-current-slot="${activePlayerSlots.get(player.id)}"
+               th:data-id="${player.id}"
+               th:data-name="${player.lastName}"
+               th:data-pos="${player.position}"
+               th:data-img="${player.headshotUrl}"
+               th:attr="data-injured=${player.injured}">
+            <div class="assigned-overlay" th:if="${activePlayerSlots.containsKey(player.id)}">
+              <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L1')}">Nasazen v 1. formaci</span>
+              <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L2')}">Nasazen v 2. formaci</span>
+            </div>
+            <div class="injured-overlay" th:if="${player.injured}">
+              <span>Zraněný</span>
+            </div>
+            <div class="player-info-left">
+              <img th:src="${player.headshotUrl}" alt="Foto" class="player-img-small" onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="player-details">
+                <h6 th:text="${player.firstName.charAt(0) + '. ' + player.lastName}">Jméno</h6>
+                <div class="player-subtext">
+                  <span th:text="${player.teamName}">Tým</span> •
+                  <span th:text="${player.position}" class="text-primary">POS</span>
+                </div>
+              </div>
+            </div>
+            <div class="player-stats-right">
+              <div class="stat-box">
+                <span class="stat-value" th:text="${player.seasonGoals}">0</span>
+                <span class="stat-label">G</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value" th:text="${player.seasonAssists}">0</span>
+                <span class="stat-label">A</span>
+              </div>
+              <div class="stat-box primary">
+                <span class="stat-value" th:text="${player.seasonPoints}">0</span>
+                <span class="stat-label">B</span>
               </div>
             </div>
           </div>
 
-          <div class="player-stats-right">
-
-            <div class="stat-box">
-              <span class="stat-value" th:text="${player.seasonGoals}">0</span>
-              <span class="stat-label">G</span>
+          <!-- Obránci -->
+          <h6 class="roster-category-header">Obránci</h6>
+          <div th:each="player : ${team.players}" th:if="${player.position == 'D'}"
+               class="roster-card-modern" draggable="true" ondragstart="drag(event)" th:id="'roster-player-' + ${player.id}"
+               th:classappend="(${activePlayerSlots.containsKey(player.id)} ? 'is-assigned' : '') + (${player.injured} ? ' is-injured' : '')"
+               th:data-current-slot="${activePlayerSlots.get(player.id)}"
+               th:data-id="${player.id}"
+               th:data-name="${player.lastName}"
+               th:data-pos="${player.position}"
+               th:data-img="${player.headshotUrl}"
+               th:attr="data-injured=${player.injured}">
+            <div class="assigned-overlay" th:if="${activePlayerSlots.containsKey(player.id)}">
+              <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L1')}">Nasazen v 1. formaci</span>
+              <span th:if="${#strings.contains(activePlayerSlots.get(player.id), 'L2')}">Nasazen v 2. formaci</span>
             </div>
-
-            <div class="stat-box">
-              <span class="stat-value" th:text="${player.seasonAssists}">0</span>
-              <span class="stat-label">A</span>
+            <div class="injured-overlay" th:if="${player.injured}">
+              <span>Zraněný</span>
             </div>
-
-            <div class="stat-box primary">
-              <span class="stat-value" th:text="${player.seasonPoints}">0</span>
-              <span class="stat-label">B</span>
+            <div class="player-info-left">
+              <img th:src="${player.headshotUrl}" alt="Foto" class="player-img-small" onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="player-details">
+                <h6 th:text="${player.firstName.charAt(0) + '. ' + player.lastName}">Jméno</h6>
+                <div class="player-subtext">
+                  <span th:text="${player.teamName}">Tým</span> •
+                  <span th:text="${player.position}" class="text-primary">POS</span>
+                </div>
+              </div>
             </div>
-
+            <div class="player-stats-right">
+              <div class="stat-box">
+                <span class="stat-value" th:text="${player.seasonGoals}">0</span>
+                <span class="stat-label">G</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value" th:text="${player.seasonAssists}">0</span>
+                <span class="stat-label">A</span>
+              </div>
+              <div class="stat-box primary">
+                <span class="stat-value" th:text="${player.seasonPoints}">0</span>
+                <span class="stat-label">B</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        </div>
+          <!-- Brankáři -->
+          <h6 class="roster-category-header">Brankáři</h6>
+          <div th:each="player : ${team.players}" th:if="${player.position == 'G'}"
+               class="roster-card-modern" draggable="true" ondragstart="drag(event)" th:id="'roster-player-' + ${player.id}"
+               th:classappend="(${activePlayerSlots.containsKey(player.id)} ? 'is-assigned' : '') + (${player.injured} ? ' is-injured' : '')"
+               th:data-current-slot="${activePlayerSlots.get(player.id)}"
+               th:data-id="${player.id}"
+               th:data-name="${player.lastName}"
+               th:data-pos="${player.position}"
+               th:data-img="${player.headshotUrl}"
+               th:attr="data-injured=${player.injured}">
+            <div class="assigned-overlay" th:if="${activePlayerSlots.get(player.id) == 'GK'}">
+              <span>Nasazen v bráně</span>
             </div>
-          </div>
+            <div class="injured-overlay" th:if="${player.injured}">
+              <span>Zraněný</span>
+            </div>
+            <div class="player-info-left">
+              <img th:src="${player.headshotUrl}" alt="Foto" class="player-img-small" onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+              <div class="player-details">
+                <h6 th:text="${player.firstName.charAt(0) + '. ' + player.lastName}">Jméno</h6>
+                <div class="player-subtext">
+                  <span th:text="${player.teamName}">Tým</span> •
+                  <span th:text="${player.position}" class="text-warning">POS</span>
+                </div>
+              </div>
+            </div>
+            <div class="player-stats-right">
+              <div class="stat-box">
+                <span class="stat-value" th:text="${#numbers.formatDecimal(player.seasonGaa, 1, 2)}">0.00</span>
+                <span class="stat-label">GAA</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-value" th:text="${#numbers.formatPercent(player.seasonSavePctg, 1, 1)}">.000</span>
+                <span class="stat-label">SV%</span>
+              </div>
+              <div class="stat-box primary">
+                <span class="stat-value" th:text="${player.seasonPoints}">0</span>
+                <span class="stat-label">B</span>
+              </div>
+            </div>
           </div>
 
           <div th:if="${team.players.empty}" class="text-center mt-5 text-muted">
@@ -323,70 +403,92 @@
 
   function drag(ev) {
     const card = ev.target.closest('.roster-card-modern'); // Najdeme hlavní kartu
-
     ev.dataTransfer.setData("id", card.getAttribute("data-id"));
     ev.dataTransfer.setData("name", card.getAttribute("data-name"));
     ev.dataTransfer.setData("pos", card.getAttribute("data-pos"));
     ev.dataTransfer.setData("img", card.getAttribute("data-img"));
     ev.dataTransfer.setData("elementId", card.id);
+    ev.dataTransfer.setData("dragType", "roster"); // Přidáme typ
+    ev.dataTransfer.setData("is-injured", card.getAttribute("data-injured"));
 
-    console.log("Táhnu hráče: " + card.getAttribute("data-name"));
+    console.log("Táhnu hráče z lavičky: " + card.getAttribute("data-name"));
+  }
+
+  function dragToken(ev) {
+    const token = ev.target.closest('.ice-player-token');
+    const rosterCardId = token.getAttribute('data-roster-id');
+    const rosterCard = document.getElementById(rosterCardId);
+
+    ev.dataTransfer.setData("id", rosterCard.getAttribute("data-id"));
+    ev.dataTransfer.setData("name", rosterCard.getAttribute("data-name"));
+    ev.dataTransfer.setData("pos", rosterCard.getAttribute("data-pos"));
+    ev.dataTransfer.setData("img", rosterCard.getAttribute("data-img"));
+    ev.dataTransfer.setData("elementId", rosterCard.id);
+    ev.dataTransfer.setData("dragType", "token"); // Přidáme typ
+    ev.dataTransfer.setData("sourceSlot", token.closest('.player-slot').id); // ID slotu, odkud táhneme
+    ev.dataTransfer.setData("is-injured", rosterCard.getAttribute("data-injured"));
+
+    console.log("Táhnu hráče z ledu: " + rosterCard.getAttribute("data-name"));
   }
 
   function drop(ev) {
     ev.preventDefault();
-    var slot = ev.target.closest('.player-slot');
+    const slot = ev.target.closest('.player-slot');
     if (!slot) return;
 
+    const isInjured = ev.dataTransfer.getData("is-injured") === 'true';
+    if (isInjured) {
+      if (!confirm('Tento hráč je zraněný. Opravdu ho chcete nasadit?')) {
+        return;
+      }
+    }
+
+    const dragType = ev.dataTransfer.getData("dragType");
+
+    if (dragType === "roster") {
+      handleRosterDrop(ev, slot);
+    } else if (dragType === "token") {
+      handleTokenDrop(ev, slot);
+    }
+  }
+
+  function handleRosterDrop(ev, slot) {
     const playerId = ev.dataTransfer.getData("id");
     const rosterElementId = ev.dataTransfer.getData("elementId");
     const rosterCard = document.getElementById(rosterElementId);
 
-    // Načteme kam chceme jít
     const targetSlotName = slot.getAttribute("data-slot-name");
     const targetGeneralPos = slot.getAttribute("data-position");
-
-    // Načteme, kde hráč PRÁVĚ TEĎ je (z atributu na kartě ve střídačce)
     const currentSlotName = rosterCard.getAttribute("data-current-slot");
 
-    // --- 1. Validace Pozice ---
     const playerPos = ev.dataTransfer.getData("pos");
     if (!isPositionValid(playerPos, targetGeneralPos)) {
       alert("Tento hráč nemůže hrát na pozici " + targetGeneralPos);
       return;
     }
 
-    // --- 2. Logika přesunu mezi formacemi ---
-    if (currentSlotName) {
-      // Hráč už je nasazený. Zjistíme kde.
+    if (currentSlotName && currentSlotName !== targetSlotName) {
       const isLine1 = currentSlotName.includes('L1');
       const targetIsLine1 = targetSlotName.includes('L1');
 
-      // Pokud se ho snažíme dát na stejné místo, nic neděláme
-      if (currentSlotName === targetSlotName) return;
-
-      // Dotaz na změnu formace
       let message = "";
       if (isLine1 && !targetIsLine1) message = "Hráč je v 1. formaci. Chcete ho přesunout do 2. formace?";
       else if (!isLine1 && targetIsLine1) message = "Hráč je v 2. formaci. Chcete ho přesunout do 1. formace?";
-      else message = "Opravdu chcete hráče přesunout na jinou pozici?"; // V rámci jedné lajny
+      else message = "Opravdu chcete hráče přesunout na jinou pozici?";
 
       if (!confirm(message)) {
-        return; // Uživatel dal Storno
+        return;
       }
 
-      // Pokud potvrdil, musíme ho NEJDŘÍV smazat ze starého slotu
-      // 1. Najdeme starý slot na ledě (pokud je viditelný) a vyčistíme ho
-      // Poznámka: Protože máme ID slotů jako 'slot-L1_LW', můžeme ho najít
       const oldSlotElement = document.getElementById('slot-' + currentSlotName);
       if (oldSlotElement) {
-        // Vizuální vyčištění starého slotu
         const generalPos = oldSlotElement.getAttribute("data-position");
-        oldSlotElement.innerHTML = `<small class="text-muted">${generalPos}</small>`;
+        const slotName = oldSlotElement.getAttribute("data-slot-name");
+        const line = slotName.includes('L1') ? '1' : '2';
+        oldSlotElement.innerHTML = `<small class="text-muted">${generalPos} ${line}</small>`;
         oldSlotElement.classList.remove("occupied");
       }
 
-      // 2. API volání pro smazání staré pozice
       if (csrfToken && csrfHeader) {
         fetch('/api/lineup/remove', {
           method: 'POST',
@@ -396,30 +498,24 @@
       }
     }
 
-    // --- 3. Vložení na nové místo (Standardní Drop) ---
-
-    // Vyhození hráče, pokud je cílový slot obsazený
     if (slot.classList.contains("occupied")) {
       removePlayerFromSlot(slot);
     }
 
-    // Vykreslení tokenu
     const playerName = ev.dataTransfer.getData("name");
     const playerImg = ev.dataTransfer.getData("img");
 
     slot.innerHTML = `
-            <div class="ice-player-token" id="ice-token-${playerId}" data-roster-id="${rosterElementId}">
-                <button class="remove-btn" onclick="removePlayer(this)">×</button>
-                <img src="${playerImg}" class="ice-player-img" onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
-                <div class="ice-player-name">${playerName}</div>
-            </div>
-        `;
+      <div class="ice-player-token" draggable="true" ondragstart="dragToken(event)" id="ice-token-${playerId}" data-roster-id="${rosterElementId}">
+        <button class="remove-btn" onclick="removePlayer(this)">×</button>
+        <img src="${playerImg}" class="ice-player-img" onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+        <div class="ice-player-name">${playerName}</div>
+      </div>
+    `;
     slot.classList.add("occupied");
 
-    // --- 4. Aktualizace Karty na Střídačce ---
     updateRosterCardVisuals(rosterCard, targetSlotName);
 
-    // --- 5. Uložení nového stavu ---
     if (csrfToken && csrfHeader) {
       fetch('/api/lineup/save', {
         method: 'POST',
@@ -429,18 +525,68 @@
     }
   }
 
-  // Funkce pro vizuální úpravu střídačky (Zašednutí + Text)
+  function handleTokenDrop(ev, targetSlot) {
+    const sourceSlotId = ev.dataTransfer.getData("sourceSlot");
+    const sourceSlot = document.getElementById(sourceSlotId);
+
+    if (sourceSlot.id === targetSlot.id) return; // Netahej na stejné místo
+
+    const rosterElementId = ev.dataTransfer.getData("elementId");
+    const rosterCard = document.getElementById(rosterElementId);
+    const playerPos = rosterCard.getAttribute("data-pos");
+    const targetGeneralPos = targetSlot.getAttribute("data-position");
+
+    if (!isPositionValid(playerPos, targetGeneralPos)) {
+      alert("Tento hráč nemůže hrát na pozici " + targetGeneralPos);
+      return;
+    }
+
+    const sourceToken = sourceSlot.querySelector('.ice-player-token');
+    const targetToken = targetSlot.querySelector('.ice-player-token');
+
+    // Cílový slot je prázdný
+    if (!targetToken) {
+      targetSlot.innerHTML = ''; // Vyčistit text "LW 1" atd.
+      targetSlot.appendChild(sourceToken);
+      targetSlot.classList.add("occupied");
+
+      // Vyčistit starý slot
+      const oldPos = sourceSlot.getAttribute("data-position");
+      const oldLine = sourceSlot.getAttribute("data-slot-name").includes("L1") ? "1" : "2";
+      sourceSlot.innerHTML = `<small class="text-muted">${oldPos} ${oldLine}</small>`;
+      sourceSlot.classList.remove("occupied");
+
+      // Aktualizace
+      const targetSlotName = targetSlot.getAttribute("data-slot-name");
+      updateRosterCardVisuals(rosterCard, targetSlotName);
+      saveLineup(rosterCard.getAttribute("data-id"), targetSlotName, sourceSlot.getAttribute("data-slot-name"));
+    }
+  }
+
+  function saveLineup(playerId, newSlot, oldSlot) {
+    if (csrfToken && csrfHeader) {
+      fetch('/api/lineup/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+        body: JSON.stringify({
+          playerId: playerId,
+          newSlotName: newSlot,
+          oldSlotName: oldSlot.replace('slot-', '')
+        })
+      });
+    }
+  }
+
+
   function updateRosterCardVisuals(card, slotName) {
     card.classList.add('is-assigned');
-    card.setAttribute('data-current-slot', slotName); // Uložíme si, kde teď je
+    card.setAttribute('data-current-slot', slotName);
 
-    // Vytvoření textu
     let text = "Nasazen";
     if (slotName.includes('L1')) text = "Nasazen v 1. formaci";
     if (slotName.includes('L2')) text = "Nasazen v 2. formaci";
     if (slotName === 'GK') text = "Nasazen v bráně";
 
-    // Vložení overlay divu (pokud tam není)
     let overlay = card.querySelector('.assigned-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -457,30 +603,25 @@
     return false;
   }
 
-  // Upravená funkce Remove
   function removePlayer(btn) {
     const token = btn.closest('.ice-player-token');
     const slot = token.closest('.player-slot');
     const slotName = slot.getAttribute("data-slot-name");
     const generalPos = slot.getAttribute("data-position");
+    const line = slotName.includes('L1') ? '1' : '2';
 
-    // Reset karty na střídačce
     const rosterId = token.getAttribute("data-roster-id");
     const rosterCard = document.getElementById(rosterId);
     if (rosterCard) {
       rosterCard.classList.remove('is-assigned');
       rosterCard.removeAttribute('data-current-slot');
-
-      // Odstranění overlay textu
       const overlay = rosterCard.querySelector('.assigned-overlay');
       if (overlay) overlay.remove();
     }
 
-    // Vyčištění slotu
-    slot.innerHTML = `<small class="text-muted">${generalPos}</small>`;
+    slot.innerHTML = `<small class="text-muted">${generalPos} ${line}</small>`;
     slot.classList.remove("occupied");
 
-    // API Remove
     if (csrfToken && csrfHeader) {
       fetch('/api/lineup/remove', {
         method: 'POST',

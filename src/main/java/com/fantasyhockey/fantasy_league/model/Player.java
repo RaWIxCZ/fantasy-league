@@ -7,19 +7,19 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Entity // Říká Hibernate: "Tohle je tabulka v databázi"
-@Table(name = "players") // Jméno tabulky v SQL
-@Data // Lombok: Automaticky vytvoří gettery, settery, toString, atd.
-@NoArgsConstructor // Lombok: Prázdný konstruktor (nutný pro Hibernate)
-@AllArgsConstructor // Lombok: Konstruktor se všemi parametry
+@Entity
+@Table(name = "players")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Player {
 
-    // Nový sloupec, kam si URL uložíme napořád
     private String headshotUrl;
 
-    // --- Vypočítané statistiky (neukládají se do DB, počítají se "za letu") ---
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean injured = false;
 
-    @Transient // Říkáme DB: "Tohle není sloupec, to si spočítáme"
+    @Transient
     public int getSeasonGoals() {
         if (matchHistory == null) return 0;
         return matchHistory.stream().mapToInt(PlayerStats::getGoals).sum();
@@ -33,7 +33,9 @@ public class Player {
 
     @Transient
     public int getSeasonPoints() {
-        // V hokeji jsou Body (Productivity) = Góly + Asistence
+        if ("G".equals(position)) {
+            return getSeasonFantasyPoints();
+        }
         return getSeasonGoals() + getSeasonAssists();
     }
 
@@ -43,22 +45,37 @@ public class Player {
         return matchHistory.stream().mapToInt(PlayerStats::getFantasyPoints).sum();
     }
 
-    // Vazba na tabulku statistik (aby hráč věděl o svých gólech)
+    @Transient
+    public double getSeasonGaa() {
+        if (matchHistory == null || matchHistory.isEmpty()) return 0.0;
+        int totalGoalsAgainst = matchHistory.stream().mapToInt(PlayerStats::getGoalsAgainst).sum();
+        long totalMinutes = matchHistory.size() * 60;
+        if (totalMinutes == 0) return 0.0;
+        return (double) totalGoalsAgainst * 60 / totalMinutes;
+    }
+
+    @Transient
+    public double getSeasonSavePctg() {
+        if (matchHistory == null || matchHistory.isEmpty()) return 0.0;
+        int totalSaves = matchHistory.stream().mapToInt(PlayerStats::getSaves).sum();
+        int totalShotsAgainst = matchHistory.stream().mapToInt(PlayerStats::getShotsAgainst).sum();
+        if (totalShotsAgainst == 0) return 0.0;
+        return (double) totalSaves / totalShotsAgainst;
+    }
+
     @OneToMany(mappedBy = "player", fetch = FetchType.LAZY)
     private List<PlayerStats> matchHistory;
 
-    @Id // Primární klíč
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment (1, 2, 3...)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true) // Každý hráč z NHL API má své unikátní ID, chceme ho zachovat
+    @Column(unique = true)
     private Long nhlId;
 
     private String firstName;
     private String lastName;
 
-    private String teamName; // Např. "Boston Bruins"
-    private String position; // Např. "C", "LW", "D", "G"
-
-    // Zatím neřešíme statistiky, to přidáme později
+    private String teamName;
+    private String position;
 }

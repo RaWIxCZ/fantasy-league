@@ -5,24 +5,20 @@ import lombok.Data;
 
 @Data
 public class NhlPlayerDto {
-    private Long id; // NHL ID
-
-    // V JSONu je to "firstName": { "default": "David" }, musíme to vytáhnout
-    // Pro zjednodušení použijeme jen objekt, mapování vyřešíme ve službě,
-    // nebo pokud je JSON jednoduchý:
+    private Long id;
 
     @JsonProperty("firstName")
     private NameDto firstNameObj;
 
-    // NHL API vrací přímo odkaz na fotku v poli "headshot"
     private String headshot;
 
     @JsonProperty("lastName")
     private NameDto lastNameObj;
 
-    private String positionCode; // "C", "R", "L"
+    private String positionCode;
 
-    // Pomocná třída pro jméno (protože NHL to má jako objekt s jazyky)
+    private boolean isActive;
+
     @Data
     public static class NameDto {
         @JsonProperty("default")

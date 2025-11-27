@@ -32,6 +32,16 @@ public class LineupApiController {
         return ResponseEntity.ok("Odstraněno");
     }
 
+    @PostMapping("/move")
+    public ResponseEntity<?> moveSpot(@RequestBody MoveSpotRequest request, Principal principal) {
+        try {
+            teamService.movePlayer(principal.getName(), request.getPlayerId(), request.getNewSlotName(), request.getOldSlotName());
+            return ResponseEntity.ok("Přesunuto");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     // DTO třídy pro příjem dat (Static inner classes)
     @lombok.Data
     static class SaveSpotRequest {
@@ -42,5 +52,12 @@ public class LineupApiController {
     @lombok.Data
     static class RemoveSpotRequest {
         private String slotName;
+    }
+
+    @lombok.Data
+    static class MoveSpotRequest {
+        private Long playerId;
+        private String newSlotName;
+        private String oldSlotName;
     }
 }

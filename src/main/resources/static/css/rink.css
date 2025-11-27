@@ -161,6 +161,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     transition: transform 0.2s, box-shadow 0.2s;
     cursor: grab;
+    position: relative;
 }
 
 .roster-card-modern:hover {
@@ -262,5 +263,36 @@
     padding: 5px;
 
     /* DŮLEŽITÉ: Toto umožní kartu chytit myší i přes ten text! */
+    pointer-events: none;
+}
+
+.roster-category-header {
+    background-color: #f2f2f2;
+    padding: 5px 10px;
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+
+.roster-card-modern.is-injured {
+    opacity: 0.6;
+    background-color: #f2f2f2;
+    cursor: not-allowed;
+}
+
+.injured-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(211, 84, 0, 0.7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 8px;
     pointer-events: none;
 }

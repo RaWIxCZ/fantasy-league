@@ -33,6 +33,15 @@ public class TeamController {
             FantasyTeam team = teamOpt.get();
             model.addAttribute("team", team);
 
+            // --- DIAGNOSTICKÝ VÝPIS ---
+            System.out.println("🔍 DEBUG: Tým '" + team.getTeamName() + "' má v seznamu " + team.getPlayers().size() + " hráčů.");
+            for(var p : team.getPlayers()) {
+                System.out.println("   - Hráč: " + p.getLastName() + " (ID: " + p.getId() + ")");
+            }
+            // -------------------------
+
+            model.addAttribute("team", team);
+
             // 1. Získáme seznam obsazených pozic z DB
             List<LineupSpot> spots = teamService.getTeamLineup(team);
 

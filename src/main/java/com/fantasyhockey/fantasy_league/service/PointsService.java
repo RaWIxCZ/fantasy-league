@@ -24,6 +24,10 @@ public class PointsService {
     // Nastavení bodování
     private static final int POINTS_PER_GOAL = 5;
     private static final int POINTS_PER_ASSIST = 3;
+    private static final int POINTS_PER_SAVE = 1;
+    private static final int POINTS_PER_WIN = 10;
+    private static final int POINTS_PER_SHUTOUT = 15;
+
 
     @Transactional
     // Přidán parametr gameId
@@ -62,5 +66,49 @@ public class PointsService {
         }
 
         System.out.println("✅ Body započteny: " + player.getLastName() + " (" + fantasyPoints + "b)");
+    }
+
+    @Transactional
+    public void addGoalieStatsForPlayer(Long nhlPlayerId, Long gameId, int saves, int shotsAgainst, boolean isWinner, LocalDate date) {
+        Player player = playerRepository.findByNhlId(nhlPlayerId)
+                .orElseThrow(() -> new RuntimeException("Brankář nenalezen ID: " + nhlPlayerId));
+
+        if (statsRepository.existsByPlayerIdAndGameId(player.getId(), gameId)) {
+            System.out.println("⚠️ Zápas " + gameId + " už byl pro brankáře " + player.getLastName() + " započítán. Přeskakuji.");
+            return;
+        }
+
+        int goalsAgainst = shotsAgainst - saves;
+        boolean isShutout = (goalsAgainst == 0 && shotsAgainst > 0);
+
+        int fantasyPoints = (saves * POINTS_PER_SAVE);
+        if (isWinner) {
+            fantasyPoints += POINTS_PER_WIN;
+        }
+        if (isShutout) {
+            fantasyPoints += POINTS_PER_SHUTOUT;
+        }
+
+        PlayerStats stats = new PlayerStats();
+        stats.setPlayer(player);
+        stats.setGameId(gameId);
+        stats.setDate(date);
+        stats.setSaves(saves);
+        stats.setShotsAgainst(shotsAgainst);
+        stats.setGoalsAgainst(goalsAgainst);
+        stats.setWin(isWinner);
+        stats.setFantasyPoints(fantasyPoints);
+
+        statsRepository.save(stats);
+
+        List<FantasyTeam> allTeams = teamRepository.findAll();
+        for (FantasyTeam team : allTeams) {
+            if (team.getPlayers().contains(player)) {
+                team.setTotalFantasyPoints(team.getTotalFantasyPoints() + fantasyPoints);
+                teamRepository.save(team);
+            }
+        }
+
+        System.out.println("✅ Body započteny pro brankáře: " + player.getLastName() + " (" + fantasyPoints + "b)");
     }
 }

@@ -32,6 +32,13 @@ public class PlayerStats {
     private int goals;
     private int assists;
 
+    // Statistiky pro brankáře
+    private int saves;
+    private int shotsAgainst;
+    private int goalsAgainst;
+    private boolean win;
+
+
     // Kolik fantasy bodů za to dostal? (např. Gól=5, Asistence=3 -> Celkem 8)
     private int fantasyPoints;
 }
