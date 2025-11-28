@@ -100,11 +100,17 @@
         <div th:if="${param.error}" class="alert alert-danger">
             Nesprávné uživatelské jméno nebo heslo.
         </div>
+
+        <!-- AJAX Error Message -->
+        <div id="loginError" class="alert alert-danger d-none">
+            Nesprávné uživatelské jméno nebo heslo.
+        </div>
+
         <div th:if="${param.logout}" class="alert alert-info">
             Byli jste odhlášeni.
         </div>
 
-        <form th:action="@{/login}" method="post">
+        <form th:action="@{/login}" method="post" id="loginForm">
             <div class="mb-3">
                 <label>Uživatelské jméno</label>
                 <input type="text" name="username" class="form-control" required autofocus>
@@ -135,7 +141,17 @@
                     </button>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Přihlásit se</button>
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" name="remember-me" id="rememberMe">
+                <label class="form-check-label" for="rememberMe">Zůstat přihlášen</label>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="disableAnimation">
+                <label class="form-check-label" for="disableAnimation">Vypnout úvodní animaci</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="loginBtn">Přihlásit se</button>
         </form>
 
         <div class="text-center mt-3">
@@ -150,32 +166,51 @@
             const logo = document.getElementById('intro-logo');
             const video = document.querySelector('.video-background iframe');
             const loginCard = document.querySelector('.card');
+            const disableAnimationCheckbox = document.getElementById('disableAnimation');
 
-            // 1. Logo fades in
-            setTimeout(() => {
-                logo.style.opacity = '1';
-            }, 100);
+            // Check LocalStorage
+            const animationDisabled = localStorage.getItem('disableAnimation') === 'true';
+            disableAnimationCheckbox.checked = animationDisabled;
 
-            // 2. Video fades in
-            setTimeout(() => {
-                video.style.opacity = '0.6';
-            }, 1500);
-
-            // 3. Logo and Overlay fade out
-            setTimeout(() => {
-                logo.style.opacity = '0';
-                overlay.style.opacity = '0';
-            }, 3500);
-
-            // Remove overlay to allow clicks
-            setTimeout(() => {
+            if (animationDisabled) {
+                // Skip animation
                 overlay.style.display = 'none';
-            }, 4500);
-
-            // 4. Login card fades in
-            setTimeout(() => {
+                logo.style.display = 'none';
+                video.style.opacity = '0.6';
                 loginCard.style.opacity = '1';
-            }, 4500);
+            } else {
+                // Run animation
+                // 1. Logo fades in
+                setTimeout(() => {
+                    logo.style.opacity = '1';
+                }, 100);
+
+                // 2. Video fades in
+                setTimeout(() => {
+                    video.style.opacity = '0.6';
+                }, 1500);
+
+                // 3. Logo and Overlay fade out
+                setTimeout(() => {
+                    logo.style.opacity = '0';
+                    overlay.style.opacity = '0';
+                }, 3500);
+
+                // Remove overlay to allow clicks
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 4500);
+
+                // 4. Login card fades in
+                setTimeout(() => {
+                    loginCard.style.opacity = '1';
+                }, 4500);
+            }
+
+            // Save preference listener
+            disableAnimationCheckbox.addEventListener('change', function () {
+                localStorage.setItem('disableAnimation', this.checked);
+            });
 
             // Password Toggle Logic
             const togglePassword = document.querySelector('#togglePassword');
@@ -192,8 +227,98 @@
                 eyeIcon.classList.toggle('d-none');
                 eyeSlashIcon.classList.toggle('d-none');
             });
+
+            // --- AJAX LOGIN LOGIC ---
+            const loginForm = document.getElementById('loginForm');
+            const loginError = document.getElementById('loginError');
+            const loginBtn = document.getElementById('loginBtn');
+            const inputs = loginForm.querySelectorAll('input');
+
+            // Hide error on input
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    loginError.classList.add('d-none');
+                });
+            });
+
+            loginForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // Disable button
+                loginBtn.disabled = true;
+                const originalBtnText = loginBtn.textContent;
+                loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Přihlašování...';
+
+                const formData = new FormData(loginForm);
+
+                // Convert FormData to URLSearchParams for x-www-form-urlencoded
+                const params = new URLSearchParams(formData);
+
+                fetch(loginForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            // Success -> Redirect
+                            window.location.href = '/';
+                        } else if (response.status === 401) {
+                            // Failure -> Show Error
+                            loginError.classList.remove('d-none');
+                            // Shake animation
+                            loginCard.classList.add('shake');
+                            setTimeout(() => loginCard.classList.remove('shake'), 500);
+
+                            loginBtn.disabled = false;
+                            loginBtn.textContent = originalBtnText;
+                        } else {
+                            // Other error
+                            alert('Nastala chyba při přihlašování.');
+                            loginBtn.disabled = false;
+                            loginBtn.textContent = originalBtnText;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Chyba připojení.');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = originalBtnText;
+                    });
+            });
         });
     </script>
+
+    <style>
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            50% {
+                transform: translateX(5px);
+            }
+
+            75% {
+                transform: translateX(-5px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+    </style>
 
 </body>
 

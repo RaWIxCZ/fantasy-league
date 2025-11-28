@@ -30,13 +30,18 @@ public class AdminController {
         Long fakeGameId = System.currentTimeMillis();
 
         // Teď posíláme 5 parametrů:
+        // Teď posíláme rozšířené parametry (pro jednoduchost 0 pro nové staty):
         pointsService.addStatsForPlayer(
                 playerId,
                 fakeGameId, // <--- Nový parametr (falešné ID)
                 goals,
                 assists,
-                LocalDate.now()
-        );
+                0, // plusMinus
+                0, // shots
+                0, // blockedShots
+                0, // hits
+                0, // pim
+                LocalDate.now());
 
         return "redirect:/my-team";
     }

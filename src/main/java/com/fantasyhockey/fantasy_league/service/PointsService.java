@@ -27,30 +27,47 @@ public class PointsService {
     private final FantasyTeamRepository teamRepository;
 
     // Nastavení bodování
-    private static final int POINTS_PER_GOAL = 5;
+    private static final int POINTS_PER_GOAL = 3;
     private static final int POINTS_PER_ASSIST = 3;
+    private static final int POINTS_PER_PLUS_MINUS = 1;
+    private static final double POINTS_PER_SHOT = 0.5;
+    private static final int POINTS_PER_BLOCK = 1;
+    private static final double POINTS_PER_HIT = 0.5;
+    private static final double POINTS_PER_PIM = -0.1;
+    private static final int POINTS_PER_HATTRICK = 3;
 
-    // Brankáři (Rebalance)
+    // Brankáři
     private static final double POINTS_PER_SAVE = 0.2;
-    private static final int POINTS_PER_WIN = 4;
     private static final int POINTS_PER_SHUTOUT = 3;
     private static final int POINTS_PER_GOAL_AGAINST = -1;
 
     @Transactional
-    // Přidán parametr gameId
-    public void addStatsForPlayer(Long nhlPlayerId, Long gameId, int goals, int assists, LocalDate date) {
+    // Přidán parametr gameId a rozšířené statistiky
+    public void addStatsForPlayer(Long nhlPlayerId, Long gameId, int goals, int assists, int plusMinus, int shots,
+            int blockedShots, int hits, int pim, LocalDate date) {
 
         Player player = playerRepository.findByNhlId(nhlPlayerId)
                 .orElseThrow(() -> new RuntimeException("Hráč nenalezen ID: " + nhlPlayerId));
 
-        // 1. KONTROLA DUPLICITY (Ochrana proti Pastrňákově 58 bodům)
+        // 1. KONTROLA DUPLICITY
         if (statsRepository.existsByPlayerIdAndGameId(player.getId(), gameId)) {
             logger.warn("⚠️ Zápas {} už byl pro hráče {} započítán. Přeskakuji.", gameId, player.getLastName());
             return;
         }
 
         // 2. Výpočet bodů
-        int fantasyPoints = (goals * POINTS_PER_GOAL) + (assists * POINTS_PER_ASSIST);
+        double points = (goals * POINTS_PER_GOAL) + (assists * POINTS_PER_ASSIST);
+        points += (plusMinus * POINTS_PER_PLUS_MINUS);
+        points += (shots * POINTS_PER_SHOT);
+        points += (blockedShots * POINTS_PER_BLOCK);
+        points += (hits * POINTS_PER_HIT);
+        points += (pim * POINTS_PER_PIM);
+
+        if (goals >= 3) {
+            points += POINTS_PER_HATTRICK;
+        }
+
+        int fantasyPoints = (int) Math.round(points);
 
         // 3. Uložení
         PlayerStats stats = new PlayerStats();
@@ -59,6 +76,11 @@ public class PointsService {
         stats.setDate(date);
         stats.setGoals(goals);
         stats.setAssists(assists);
+        stats.setPlusMinus(plusMinus);
+        stats.setShots(shots);
+        stats.setBlockedShots(blockedShots);
+        stats.setHits(hits);
+        stats.setPim(pim);
         stats.setFantasyPoints(fantasyPoints);
 
         statsRepository.save(stats);
@@ -96,9 +118,9 @@ public class PointsService {
         // Inkasované góly (např. 2 * -1 = -2 body)
         points += (goalsAgainst * POINTS_PER_GOAL_AGAINST);
 
-        if (isWinner) {
-            points += POINTS_PER_WIN;
-        }
+        // if (isWinner) {
+        // points += POINTS_PER_WIN;
+        // }
         if (isShutout) {
             points += POINTS_PER_SHUTOUT;
         }

@@ -21,6 +21,19 @@ public class NhlScheduleResponse {
     @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class GameDto {
-        private Long id; // To je to číslo, co potřebujeme (např. 2025020285)
+        private Long id;
+        private String startTimeUTC;
+        private String gameState; // "FUT", "LIVE", "OFF", "FINAL"
+        private TeamDto awayTeam;
+        private TeamDto homeTeam;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class TeamDto {
+        private int id;
+        private String abbrev;
+        private Integer score;
+        private String logo;
     }
 }

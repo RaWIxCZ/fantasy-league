@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -24,9 +25,9 @@ public class FantasyTeamService {
     private final PlayerRepository playerRepository;
     private final LineupSpotRepository lineupRepository;
 
-    private static final int MAX_FORWARDS = 11;
-    private static final int MAX_DEFENSEMEN = 7;
-    private static final int MAX_GOALIES = 3;
+    public static final int MAX_FORWARDS = 11;
+    public static final int MAX_DEFENSEMEN = 7;
+    public static final int MAX_GOALIES = 3;
 
     public Optional<FantasyTeam> getTeamByUsername(String username) {
         User user = userRepository.findByUsername(username).orElseThrow();
@@ -46,7 +47,7 @@ public class FantasyTeamService {
         FantasyTeam team = getTeamByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Nejdřív si musíš vytvořit tým!"));
 
-        Player player = playerRepository.findById(playerId)
+        Player player = playerRepository.findById(Objects.requireNonNull(playerId))
                 .orElseThrow(() -> new RuntimeException("Hráč neexistuje"));
 
         if (team.getPlayers().contains(player)) {
@@ -60,7 +61,9 @@ public class FantasyTeamService {
     }
 
     private void validateTeamRoster(FantasyTeam team, String newPlayerPosition) {
-        long forwardsCount = team.getPlayers().stream().filter(p -> "C".equals(p.getPosition()) || "LW".equals(p.getPosition()) || "RW".equals(p.getPosition())).count();
+        long forwardsCount = team.getPlayers().stream().filter(
+                p -> "C".equals(p.getPosition()) || "LW".equals(p.getPosition()) || "RW".equals(p.getPosition()))
+                .count();
         long defensemenCount = team.getPlayers().stream().filter(p -> "D".equals(p.getPosition())).count();
         long goaliesCount = team.getPlayers().stream().filter(p -> "G".equals(p.getPosition())).count();
 
@@ -102,7 +105,7 @@ public class FantasyTeamService {
         FantasyTeam team = getTeamByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Tým nenalezen"));
 
-        Player player = playerRepository.findById(playerId)
+        Player player = playerRepository.findById(Objects.requireNonNull(playerId))
                 .orElseThrow(() -> new RuntimeException("Hráč nenalezen"));
 
         LineupSpot spot = lineupRepository.findByTeamAndSlotName(team, slotName)

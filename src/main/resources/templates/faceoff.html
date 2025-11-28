@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Faceoff - Zápasy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .matchup-card {
+            transition: transform 0.2s;
+        }
+
+        .matchup-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background-color: #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #6c757d;
+        }
+
+        .score-display {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .vs-badge {
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <div th:replace="~{fragments :: nav}"></div>
+
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold text-uppercase">Faceoff</h1>
+            <div th:if="${currentWeek != null}" class="d-inline-block bg-white px-4 py-2 rounded-pill shadow-sm mt-3">
+                <span class="text-muted text-uppercase fw-bold small me-2">Aktuální kolo</span>
+                <span class="fw-bold text-primary" th:text="'Týden ' + ${currentWeek.weekNumber}">Týden 1</span>
+                <span class="mx-2 text-muted">|</span>
+                <span
+                    th:text="${#temporals.format(currentWeek.startDate, 'd. M.')} + ' - ' + ${#temporals.format(currentWeek.endDate, 'd. M.')}">Datum</span>
+            </div>
+            <div th:unless="${currentWeek != null}" class="alert alert-warning mt-3">
+                Sezóna zatím nezačala nebo není vygenerován rozpis.
+            </div>
+        </div>
+
+        <!-- Matchups Grid -->
+        <div class="row g-4 justify-content-center">
+            <div th:each="matchup : ${matchups}" class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100 matchup-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+
+                            <!-- Home Team -->
+                            <div class="text-center" style="width: 35%;">
+                                <div class="team-logo-placeholder mx-auto mb-3 fs-4">
+                                    <span th:text="${#strings.substring(matchup.homeTeam.teamName, 0, 1)}">H</span>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-truncate" th:text="${matchup.homeTeam.teamName}">Domácí
+                                </h5>
+                                <div class="text-muted small">Domácí</div>
+                            </div>
+
+                            <!-- Score / VS -->
+                            <div class="text-center" style="width: 30%;">
+                                <div class="score-display font-monospace text-dark mb-1">
+                                    <span th:text="${#numbers.formatDecimal(matchup.homeScore, 1, 1)}">0.0</span>
+                                    <span class="mx-1 text-muted">:</span>
+                                    <span th:text="${#numbers.formatDecimal(matchup.awayScore, 1, 1)}">0.0</span>
+                                </div>
+                                <span class="badge bg-light text-secondary border vs-badge">VS</span>
+                            </div>
+
+                            <!-- Away Team -->
+                            <div class="text-center" style="width: 35%;">
+                                <div class="team-logo-placeholder mx-auto mb-3 fs-4">
+                                    <span th:text="${#strings.substring(matchup.awayTeam.teamName, 0, 1)}">A</span>
+                                </div>
+                                <h5 class="fw-bold mb-0 text-truncate" th:text="${matchup.awayTeam.teamName}">Hosté</h5>
+                                <div class="text-muted small">Hosté</div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Button (Placeholder for now) -->
+                        <div class="text-center mt-4 pt-3 border-top">
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-4" disabled>
+                                <i class="bi bi-bar-chart-fill me-2"></i>Preview (Brzy)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -12,4 +12,7 @@ public interface PlayerStatsRepository extends JpaRepository<PlayerStats, Long> 
 
     // Kontrola duplicity
     boolean existsByPlayerIdAndGameId(Long playerId, Long gameId);
+
+    List<PlayerStats> findByPlayerIdAndDateBetween(Long playerId, java.time.LocalDate startDate,
+            java.time.LocalDate endDate);
 }

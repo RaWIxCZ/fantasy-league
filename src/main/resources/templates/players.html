@@ -4,81 +4,559 @@
 <head>
     <title>Draft Hráčů</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 
 <body class="bg-light">
 
     <div th:replace="~{fragments :: nav}"></div>
 
-    <div class="container mt-5">
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Draft: Seznam Hráčů</h1>
-        </div>
-
-        <div class="card p-3 mb-4 bg-light">
-            <form action="/players" method="get" class="row g-3 align-items-center">
-                <div class="col-auto">
-                    <label for="teamSelect" class="col-form-label fw-bold">Vyber tým NHL:</label>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- LEVÝ SLOUPEC: Seznam týmů -->
+            <div class="col-md-3 col-lg-2 sidebar" style="height: calc(100vh - 60px); overflow-y: auto;">
+                <h4 class="mb-3 ps-2">Týmy NHL</h4>
+                <div class="list-group list-group-flush">
+                    <a th:each="team : ${teamList}" th:href="@{/players(team=${team})}" th:data-team="${team}"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center team-link"
+                        th:classappend="${team == selectedTeam} ? 'active fw-bold' : ''">
+                        <span th:text="${teamNames.get(team)}">Boston Bruins</span>
+                        <i th:if="${team == selectedTeam}" class="bi bi-chevron-right"></i>
+                    </a>
                 </div>
-                <div class="col-auto">
-                    <select name="team" id="teamSelect" class="form-select" onchange="this.form.submit()">
-                        <option value="">-- Zvolte tým --</option>
-                        <option th:each="team : ${teamList}" th:value="${team}" th:text="${team}"
-                            th:selected="${team == selectedTeam}">
-                            Boston Bruins
-                        </option>
-                    </select>
+            </div>
+
+            <!-- PRAVÝ SLOUPEC: Hráči -->
+            <div class="col-md-9 col-lg-10 content-area px-4 pb-4 pt-0"
+                style="height: calc(100vh - 60px); overflow-y: auto;">
+
+                <!-- Wrapper pro AJAX fragment -->
+                <div id="player-content-wrapper" th:fragment="playerListContent">
+
+                    <div th:if="${selectedTeam == null}"
+                        class="d-flex justify-content-center align-items-center h-100 text-muted"
+                        style="min-height: 50vh;">
+                        <div class="text-center">
+                            <h2 class="display-6">👈 Vyberte tým ze seznamu</h2>
+                            <p>Pro zobrazení soupisky hráčů klikněte na tým v levém menu.</p>
+                        </div>
+                    </div>
+
+                    <div th:if="${selectedTeam != null}" class="fade-in-content slide-in-animation">
+                        <h2 class="mb-4 border-bottom pb-2 mt-0" th:text="${teamNames.get(selectedTeam)}">Tým</h2>
+
+                        <!-- ÚTOČNÍCI -->
+                        <div th:if="${not #lists.isEmpty(forwards)}" class="mb-5">
+                            <h3 class="mb-3 text-danger" id="forwards-header">Útočníci</h3>
+                            <table class="table table-hover align-middle shadow-sm bg-white rounded">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;"></th>
+                                        <th style="width: 25%;">Jméno</th>
+                                        <th style="width: 20%;">Tým</th>
+                                        <th style="width: 15%;">Pozice</th>
+                                        <th style="width: 15%;">Ø Body</th>
+                                        <th style="width: 15%;">Akce</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="player : ${forwards}" th:id="'player-row-' + ${player.id}"
+                                        th:classappend="${draftedPlayers.containsKey(player.id)} ? 'table-secondary text-muted position-relative' : 'position-relative'">
+
+                                        <!-- 1. FOTKA -->
+                                        <td>
+                                            <img th:src="${player.headshotUrl}" class="rounded-circle"
+                                                style="width: 40px; height: 40px; object-fit: cover;"
+                                                th:styleappend="${draftedPlayers.containsKey(player.id)} ? 'opacity: 0.5;' : ''"
+                                                onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                                        </td>
+
+                                        <!-- 2. JMÉNO -->
+                                        <td>
+                                            <span th:text="${player.firstName} + ' ' + ${player.lastName}"
+                                                th:style="${draftedPlayers.containsKey(player.id)} ? 'opacity: 0.5;' : ''"
+                                                class="fw-bold">Jméno</span>
+                                        </td>
+
+                                        <!-- DRAFTOVANÝ HRÁČ -->
+                                        <td th:if="${draftedPlayers.containsKey(player.id)}" colspan="4"
+                                            class="p-0 border-0">
+                                            <div class="position-absolute top-50 start-50 translate-middle w-100 text-center"
+                                                style="pointer-events: none;">
+                                                <span
+                                                    class="fw-bold text-danger fs-5 text-uppercase d-flex align-items-center justify-content-center gap-2">
+                                                    <span>Draftovaný týmem <span
+                                                            th:text="${draftedPlayers.get(player.id)}"></span></span>
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <!-- NEDRAFTOVANÝ HRÁČ -->
+                                        <th:block th:unless="${draftedPlayers.containsKey(player.id)}">
+                                            <td th:text="${teamNames.get(player.teamName)}">Tým</td>
+                                            <td>
+                                                <span th:text="${player.position}"
+                                                    class="badge bg-danger text-white">POS</span>
+                                            </td>
+                                            <td class="fw-bold"
+                                                th:text="${#numbers.formatDecimal(player.averageFantasyPoints, 1, 2)}">
+                                                0.00</td>
+                                            <td>
+                                                <form th:action="@{/add-player}" method="post" class="draft-form"
+                                                    th:data-player-id="${player.id}">
+                                                    <input type="hidden" name="playerId" th:value="${player.id}" />
+                                                    <button type="submit" class="btn btn-sm fw-bold w-100 draft-btn"
+                                                        th:classappend="${forwardsFull} ? 'btn-secondary disabled' : 'btn-outline-success'"
+                                                        th:disabled="${forwardsFull}"
+                                                        th:text="${forwardsFull} ? 'Maximální počet hráčů' : 'Draft'">
+                                                        Draft
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </th:block>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- OBRÁNCI -->
+                        <div th:if="${not #lists.isEmpty(defensemen)}" class="mb-5">
+                            <h3 class="mb-3 text-primary" id="defense-header">Obránci</h3>
+                            <table class="table table-hover align-middle shadow-sm bg-white rounded">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;"></th>
+                                        <th style="width: 25%;">Jméno</th>
+                                        <th style="width: 20%;">Tým</th>
+                                        <th style="width: 15%;">Pozice</th>
+                                        <th style="width: 15%;">Ø Body</th>
+                                        <th style="width: 15%;">Akce</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="player : ${defensemen}" th:id="'player-row-' + ${player.id}"
+                                        th:classappend="${draftedPlayers.containsKey(player.id)} ? 'table-secondary text-muted position-relative' : 'position-relative'">
+
+                                        <td>
+                                            <img th:src="${player.headshotUrl}" class="rounded-circle"
+                                                style="width: 40px; height: 40px; object-fit: cover;"
+                                                th:styleappend="${draftedPlayers.containsKey(player.id)} ? 'opacity: 0.5;' : ''"
+                                                onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                                        </td>
+                                        <td>
+                                            <span th:text="${player.firstName} + ' ' + ${player.lastName}"
+                                                th:style="${draftedPlayers.containsKey(player.id)} ? 'opacity: 0.5;' : ''"
+                                                class="fw-bold">Jméno</span>
+                                        </td>
+
+                                        <td th:if="${draftedPlayers.containsKey(player.id)}" colspan="4"
+                                            class="p-0 border-0">
+                                            <div class="position-absolute top-50 start-50 translate-middle w-100 text-center"
+                                                style="pointer-events: none;">
+                                                <span
+                                                    class="fw-bold text-danger fs-5 text-uppercase d-flex align-items-center justify-content-center gap-2">
+                                                    <span>Draftovaný týmem <span
+                                                            th:text="${draftedPlayers.get(player.id)}"></span></span>
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <th:block th:unless="${draftedPlayers.containsKey(player.id)}">
+                                            <td th:text="${teamNames.get(player.teamName)}">Tým</td>
+                                            <td>
+                                                <span th:text="${player.position}"
+                                                    class="badge bg-primary text-white">POS</span>
+                                            </td>
+                                            <td class="fw-bold"
+                                                th:text="${#numbers.formatDecimal(player.averageFantasyPoints, 1, 2)}">
+                                                0.00</td>
+                                            <td>
+                                                <form th:action="@{/add-player}" method="post" class="draft-form"
+                                                    th:data-player-id="${player.id}">
+                                                    <input type="hidden" name="playerId" th:value="${player.id}" />
+                                                    <button type="submit" class="btn btn-sm fw-bold w-100 draft-btn"
+                                                        th:classappend="${defenseFull} ? 'btn-secondary disabled' : 'btn-outline-success'"
+                                                        th:disabled="${defenseFull}"
+                                                        th:text="${defenseFull} ? 'Maximální počet hráčů' : 'Draft'">
+                                                        Draft
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </th:block>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- BRANKÁŘI -->
+                        <div th:if="${not #lists.isEmpty(goalies)}" class="mb-5">
+                            <h3 class="mb-3 text-warning text-dark" id="goalies-header">Brankáři</h3>
+                            <table class="table table-hover align-middle shadow-sm bg-white rounded">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;"></th>
+                                        <th style="width: 25%;">Jméno</th>
+                                        <th style="width: 20%;">Tým</th>
+                                        <th style="width: 15%;">Pozice</th>
+                                        <th style="width: 15%;">Ø Body</th>
+                                        <th style="width: 15%;">Akce</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="player : ${goalies}" th:id="'player-row-' + ${player.id}"
+                                        th:classappend="${draftedPlayers.containsKey(player.id)} ? 'table-secondary text-muted position-relative' : 'position-relative'">
+
+                                        <td>
+                                            <img th:src="${player.headshotUrl}" class="rounded-circle"
+                                                style="width: 40px; height: 40px; object-fit: cover;"
+                                                th:styleappend="${draftedPlayers.containsKey(player.id)} ? 'opacity: 0.5;' : ''"
+                                                onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                                        </td>
+                                        <td>
+                                            <span th:text="${player.firstName} + ' ' + ${player.lastName}"
+                                                th:style="${draftedPlayers.containsKey(player.id)} ? 'opacity: 0.5;' : ''"
+                                                class="fw-bold">Jméno</span>
+                                        </td>
+
+                                        <td th:if="${draftedPlayers.containsKey(player.id)}" colspan="4"
+                                            class="p-0 border-0">
+                                            <div class="position-absolute top-50 start-50 translate-middle w-100 text-center"
+                                                style="pointer-events: none;">
+                                                <span
+                                                    class="fw-bold text-danger fs-5 text-uppercase d-flex align-items-center justify-content-center gap-2">
+                                                    <span>Draftovaný týmem <span
+                                                            th:text="${draftedPlayers.get(player.id)}"></span></span>
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <th:block th:unless="${draftedPlayers.containsKey(player.id)}">
+                                            <td th:text="${teamNames.get(player.teamName)}">Tým</td>
+                                            <td>
+                                                <span th:text="${player.position}"
+                                                    class="badge bg-warning text-dark">POS</span>
+                                            </td>
+                                            <td class="fw-bold"
+                                                th:text="${#numbers.formatDecimal(player.averageFantasyPoints, 1, 2)}">
+                                                0.00</td>
+                                            <td>
+                                                <form th:action="@{/add-player}" method="post" class="draft-form"
+                                                    th:data-player-id="${player.id}">
+                                                    <input type="hidden" name="playerId" th:value="${player.id}" />
+                                                    <button type="submit" class="btn btn-sm fw-bold w-100 draft-btn"
+                                                        th:classappend="${goaliesFull} ? 'btn-secondary disabled' : 'btn-outline-success'"
+                                                        th:disabled="${goaliesFull}"
+                                                        th:text="${goaliesFull} ? 'Maximální počet hráčů' : 'Draft'">
+                                                        Draft
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </th:block>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            </div>
         </div>
+    </div>
 
-        <div th:if="${#lists.isEmpty(playersList)}" class="alert alert-info text-center">
-            👆 Pro zobrazení hráčů vyberte tým z nabídky nahoře.
-        </div>
+    <!-- CSS pro animace a layout -->
+    <style>
+        /* Sidebar Styles */
+        .sidebar {
+            z-index: 1000;
+            /* Ensure sidebar is above content */
+            position: relative;
+        }
 
-        <table th:unless="${#lists.isEmpty(playersList)}" class="table table-striped table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Foto</th>
-                    <th>Jméno</th>
-                    <th>Tým</th>
-                    <th>Pozice</th>
-                    <th>Body</th>
-                    <th>Akce</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="player : ${playersList}">
-                    <td>
-                        <img th:src="${player.headshotUrl}" class="rounded-circle"
-                            style="width: 40px; height: 40px; object-fit: cover;"
-                            onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
-                    </td>
+        .sidebar .list-group-item {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            transition: color 0.3s ease;
+        }
 
-                    <td th:text="${player.firstName} + ' ' + ${player.lastName}">Jméno</td>
-                    <td th:text="${player.teamName}">Tým</td>
+        /* Blue fill animation background */
+        .sidebar .list-group-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0;
+            background-color: #0d6efd;
+            z-index: -1;
+            transition: width 0.4s ease-in-out;
+        }
 
-                    <td>
-                        <span th:text="${player.position}" class="badge"
-                            th:classappend="${player.position == 'G'} ? 'bg-warning text-dark' : 'bg-secondary'">
-                            POS
-                        </span>
-                    </td>
+        .sidebar .list-group-item.active {
+            background-color: transparent;
+            /* Reveal the pseudo-element */
+            color: white;
+            border-color: #0d6efd;
+            font-weight: bold;
+        }
 
-                    <td class="fw-bold" th:text="${player.seasonPoints}">0</td>
+        .sidebar .list-group-item.active::before {
+            width: 100%;
+        }
 
-                    <td>
-                        <form th:action="@{/add-player}" method="post">
-                            <input type="hidden" name="playerId" th:value="${player.id}" />
-                            <button type="submit" class="btn btn-sm btn-success fw-bold">
-                                + Draft
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        .sidebar .list-group-item.active i {
+            color: white;
+        }
+
+        /* Content Animation */
+        .content-area {
+            z-index: 1;
+            position: relative;
+        }
+
+        .fade-in-content {
+            /* Base state for content */
+        }
+
+        .slide-in-animation {
+            animation: slideOutFromUnder 0.6s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        @keyframes slideOutFromUnder {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+                /* Start slightly under the sidebar */
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Animace draftování */
+        .draft-success-animation {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .draft-success-animation::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #198754;
+            /* Success green */
+            transform: translateX(100%);
+            /* Start from right */
+            animation: slideInRight 0.8s forwards;
+            z-index: 5;
+        }
+
+        /* Text overlay using ::after */
+        .draft-success-animation::after {
+            content: 'Hráč úspěšně draftován \F26B';
+            /* \F26B is check-circle-fill in bootstrap-icons */
+            font-family: "bootstrap-icons";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            font-size: 1.25rem;
+            opacity: 0;
+            animation: fadeInText 0.5s 0.3s forwards;
+            z-index: 6;
+            white-space: nowrap;
+        }
+
+        @keyframes slideInRight {
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInText {
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            attachDraftListeners();
+            attachTeamListeners();
+        });
+
+        function attachDraftListeners() {
+            document.querySelectorAll('.draft-form').forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const btn = this.querySelector('button');
+                    const originalText = btn.textContent;
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+                    const formData = new FormData(this);
+
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // 1. Update UI for the drafted player row
+                                const row = this.closest('tr');
+                                row.classList.add('table-secondary', 'text-muted');
+
+                                // Dim image and name
+                                const img = row.querySelector('img');
+                                if (img) img.style.opacity = '0.5';
+                                const nameSpan = row.querySelector('td:nth-child(2) span');
+                                if (nameSpan) nameSpan.style.opacity = '0.5';
+
+                                // Replace action cell with "Drafted" text
+                                const actionCell = this.closest('td');
+
+                                // Find the cells to remove/hide
+                                const teamCell = row.querySelector('td:nth-last-child(4)'); // Tým
+                                const posCell = row.querySelector('td:nth-last-child(3)'); // Pozice
+                                const pointsCell = row.querySelector('td:nth-last-child(2)'); // Body
+
+                                if (teamCell) teamCell.remove();
+                                if (posCell) posCell.remove();
+                                if (pointsCell) pointsCell.remove();
+
+                                actionCell.setAttribute('colspan', '4');
+                                actionCell.classList.add('p-0', 'border-0');
+                                actionCell.innerHTML = `
+                                <div class="position-absolute top-50 start-50 translate-middle w-100 text-center" style="pointer-events: none;">
+                                    <span class="fw-bold text-danger fs-5 text-uppercase d-flex align-items-center justify-content-center gap-2">
+                                        <span>Draftovaný týmem <span>${data.teamName}</span></span>
+                                    </span>
+                                </div>
+                            `;
+
+                                // 2. Update Counts in Headers (REMOVED as per user request)
+                                // We still need to check if full to disable buttons
+
+                                if (data.forwardsFull) {
+                                    disableButtonsForRole('LW', 'C', 'RW');
+                                }
+
+                                if (data.defenseFull) {
+                                    disableButtonsForRole('D');
+                                }
+
+                                if (data.goaliesFull) {
+                                    disableButtonsForRole('G');
+                                }
+                            } else {
+                                alert('Chyba: ' + data.message);
+                                btn.disabled = false;
+                                btn.textContent = originalText;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Chyba připojení.');
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        });
+                });
+            });
+        }
+
+        function disableButtonsForRole(...roles) {
+            document.querySelectorAll('tr').forEach(row => {
+                const posBadge = row.querySelector('.badge');
+                if (posBadge && roles.includes(posBadge.textContent)) {
+                    const btn = row.querySelector('.draft-btn');
+                    if (btn && !btn.disabled) {
+                        btn.disabled = true;
+                        btn.classList.remove('btn-outline-success');
+                        btn.classList.add('btn-secondary', 'disabled');
+                        btn.textContent = 'Maximální počet hráčů';
+                    }
+                }
+            });
+        }
+
+        function attachTeamListeners() {
+            document.querySelectorAll('.team-link').forEach(link => {
+                link.addEventListener('click', function (e) {
+                    loadTeam(e, this.dataset.team, this);
+                });
+            });
+        }
+
+
+
+        function loadTeam(event, teamAbbrev, clickedLink) {
+            event.preventDefault();
+
+            // 1. Update Sidebar Active State IMMEDIATELY (starts the fill animation)
+            document.querySelectorAll('.sidebar .list-group-item').forEach(el => {
+                el.classList.remove('active', 'fw-bold');
+                const icon = el.querySelector('.bi-chevron-right');
+                if (icon) icon.remove();
+            });
+
+            clickedLink.classList.add('active', 'fw-bold');
+
+            // Add chevron icon if not present
+            if (!clickedLink.querySelector('.bi-chevron-right')) {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-chevron-right';
+                clickedLink.appendChild(icon);
+            }
+
+            // 2. Fetch New Content (Background)
+            fetch(`/players?team=${teamAbbrev}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    // 3. Update Content and Trigger "Emerging" Animation
+                    const container = document.getElementById('player-content-wrapper');
+
+                    // Replace content
+                    container.outerHTML = html;
+
+                    // The new content (html) should have the 'slide-in-animation' class 
+                    // or we ensure the fragment includes it.
+                    // In our controller/template, the fragment is the div with id="player-content-wrapper".
+                    // We need to make sure the NEW wrapper has the animation class.
+
+                    const newContainer = document.getElementById('player-content-wrapper');
+                    if (newContainer) {
+                        newContainer.classList.add('slide-in-animation');
+                    }
+
+                    // 4. Re-attach listeners
+                    attachDraftListeners();
+
+                    // 5. Update URL
+                    const newUrl = `/players?team=${teamAbbrev}`;
+                    window.history.pushState({ path: newUrl }, '', newUrl);
+                })
+                .catch(err => console.error('Failed to load team:', err));
+        }
+
+        // Handle Back/Forward Browser Buttons
+        window.onpopstate = function (event) {
+            window.location.reload(); // Simple fallback for now
+        };
+    </script>
 
 </body>
 

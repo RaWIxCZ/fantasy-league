@@ -36,6 +36,16 @@ public class NhlBoxscoreResponse {
         private Long playerId;
         private int goals = 0;
         private int assists = 0;
+        @JsonProperty("plusMinus")
+        private int plusMinus = 0;
+        @JsonProperty("sog")
+        private int shots = 0;
+        @JsonProperty("blockedShots")
+        private int blockedShots = 0;
+        @JsonProperty("hits")
+        private int hits = 0;
+        @JsonProperty("pim")
+        private int pim = 0;
     }
 
     @Data

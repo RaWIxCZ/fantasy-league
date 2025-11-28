@@ -20,6 +20,10 @@
                             href="/my-team">Můj Tým</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" th:classappend="${requestURI == '/faceoff' ? 'active' : ''}"
+                            href="/faceoff">Zápasy</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" th:classappend="${requestURI == '/leaderboard' ? 'active' : ''}"
                             href="/leaderboard">Tabulka</a>
                     </li>

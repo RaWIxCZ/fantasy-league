@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,6 +80,32 @@ public class TeamController {
             model.addAttribute("defensemenCount", defensemenCount);
             model.addAttribute("goaliesCount", goaliesCount);
 
+            // --- TŘÍDĚNÍ HRÁČŮ PODLE PRŮMĚRNÝCH BODŮ ---
+            List<com.fantasyhockey.fantasy_league.model.Player> sortedForwards = team.getPlayers().stream()
+                    .filter(p -> List.of("LW", "C", "RW").contains(p.getPosition()))
+                    .sorted(Comparator
+                            .comparingDouble(com.fantasyhockey.fantasy_league.model.Player::getAverageFantasyPoints)
+                            .reversed())
+                    .collect(Collectors.toList());
+
+            List<com.fantasyhockey.fantasy_league.model.Player> sortedDefensemen = team.getPlayers().stream()
+                    .filter(p -> "D".equals(p.getPosition()))
+                    .sorted(Comparator
+                            .comparingDouble(com.fantasyhockey.fantasy_league.model.Player::getAverageFantasyPoints)
+                            .reversed())
+                    .collect(Collectors.toList());
+
+            List<com.fantasyhockey.fantasy_league.model.Player> sortedGoalies = team.getPlayers().stream()
+                    .filter(p -> "G".equals(p.getPosition()))
+                    .sorted(Comparator
+                            .comparingDouble(com.fantasyhockey.fantasy_league.model.Player::getAverageFantasyPoints)
+                            .reversed())
+                    .collect(Collectors.toList());
+
+            model.addAttribute("sortedForwards", sortedForwards);
+            model.addAttribute("sortedDefensemen", sortedDefensemen);
+            model.addAttribute("sortedGoalies", sortedGoalies);
+
             model.addAttribute("maxForwards", 11);
             model.addAttribute("maxDefensemen", 7);
             model.addAttribute("maxGoalies", 3);
@@ -99,14 +126,52 @@ public class TeamController {
     }
 
     @PostMapping("/add-player")
-    public String addPlayerToTeam(@RequestParam("playerId") Long playerId, Principal principal) {
+    public org.springframework.http.ResponseEntity<?> addPlayerToTeam(
+            @RequestParam("playerId") Long playerId,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
+            Principal principal) {
         try {
             teamService.addPlayerToTeam(playerId, principal.getName());
-            return "redirect:/my-team";
+
+            if ("XMLHttpRequest".equals(requestedWith)) {
+                // Pro AJAX vrátíme JSON s novými počty
+                Map<String, Object> response = new java.util.HashMap<>();
+                response.put("success", true);
+                response.put("message", "Hráč byl úspěšně draftován.");
+
+                // Získání aktuálních počtů pro aktualizaci UI
+                Optional<FantasyTeam> teamOpt = teamService.getTeamByUsername(principal.getName());
+                if (teamOpt.isPresent()) {
+                    FantasyTeam team = teamOpt.get();
+                    response.put("forwardsCount", team.getPlayers().stream()
+                            .filter(p -> List.of("LW", "C", "RW").contains(p.getPosition())).count());
+                    response.put("defenseCount",
+                            team.getPlayers().stream().filter(p -> "D".equals(p.getPosition())).count());
+                    response.put("goaliesCount",
+                            team.getPlayers().stream().filter(p -> "G".equals(p.getPosition())).count());
+
+                    response.put("forwardsFull", team.getPlayers().stream()
+                            .filter(p -> List.of("LW", "C", "RW").contains(p.getPosition())).count() >= 11);
+                    response.put("defenseFull",
+                            team.getPlayers().stream().filter(p -> "D".equals(p.getPosition())).count() >= 7);
+                    response.put("goaliesFull",
+                            team.getPlayers().stream().filter(p -> "G".equals(p.getPosition())).count() >= 3);
+
+                    response.put("teamName", team.getTeamName());
+                }
+
+                return org.springframework.http.ResponseEntity.ok(response);
+            }
+
+            return org.springframework.http.ResponseEntity.status(302).header("Location", "/my-team").build();
         } catch (RuntimeException e) {
-            // OPRAVA: Enkódování češtiny do URL formátu
+            if ("XMLHttpRequest".equals(requestedWith)) {
+                return org.springframework.http.ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", e.getMessage()));
+            }
             String encodedError = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
-            return "redirect:/players?error=" + encodedError;
+            return org.springframework.http.ResponseEntity.status(302)
+                    .header("Location", "/players?error=" + encodedError).build();
         }
     }
 

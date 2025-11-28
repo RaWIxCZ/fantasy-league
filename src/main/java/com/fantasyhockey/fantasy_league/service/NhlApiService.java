@@ -166,13 +166,20 @@ public class NhlApiService {
         }
 
         for (NhlBoxscoreResponse.PlayerStatDto p : skaters) {
-            if (p.getGoals() > 0 || p.getAssists() > 0) {
+            // Započítáme, pokud má hráč alespoň nějakou statistiku (nejen góly/asistence)
+            if (p.getGoals() > 0 || p.getAssists() > 0 || p.getShots() > 0 || p.getBlockedShots() > 0
+                    || p.getHits() > 0 || p.getPim() > 0 || p.getPlusMinus() != 0) {
                 try {
                     pointsService.addStatsForPlayer(
                             p.getPlayerId(),
                             gameId,
                             p.getGoals(),
                             p.getAssists(),
+                            p.getPlusMinus(),
+                            p.getShots(),
+                            p.getBlockedShots(),
+                            p.getHits(),
+                            p.getPim(),
                             LocalDate.now());
                 } catch (Exception e) {
                     logger.warn("⚠️ CHYBA u hráče ID {}: {}", p.getPlayerId(), e.getMessage());
@@ -222,6 +229,54 @@ public class NhlApiService {
         }
 
         logger.info("🏁 KONEC: Import sezóny dokončen.");
+    }
+
+    private static final Map<String, String> TEAM_NAMES = Map.ofEntries(
+            Map.entry("ANA", "Anaheim Ducks"),
+            Map.entry("BOS", "Boston Bruins"),
+            Map.entry("BUF", "Buffalo Sabres"),
+            Map.entry("CGY", "Calgary Flames"),
+            Map.entry("CAR", "Carolina Hurricanes"),
+            Map.entry("CHI", "Chicago Blackhawks"),
+            Map.entry("COL", "Colorado Avalanche"),
+            Map.entry("CBJ", "Columbus Blue Jackets"),
+            Map.entry("DAL", "Dallas Stars"),
+            Map.entry("DET", "Detroit Red Wings"),
+            Map.entry("EDM", "Edmonton Oilers"),
+            Map.entry("FLA", "Florida Panthers"),
+            Map.entry("LAK", "Los Angeles Kings"),
+            Map.entry("MIN", "Minnesota Wild"),
+            Map.entry("MTL", "Montreal Canadiens"),
+            Map.entry("NSH", "Nashville Predators"),
+            Map.entry("NJD", "New Jersey Devils"),
+            Map.entry("NYI", "New York Islanders"),
+            Map.entry("NYR", "New York Rangers"),
+            Map.entry("OTT", "Ottawa Senators"),
+            Map.entry("PHI", "Philadelphia Flyers"),
+            Map.entry("PIT", "Pittsburgh Penguins"),
+            Map.entry("SJS", "San Jose Sharks"),
+            Map.entry("SEA", "Seattle Kraken"),
+            Map.entry("STL", "St. Louis Blues"),
+            Map.entry("TBL", "Tampa Bay Lightning"),
+            Map.entry("TOR", "Toronto Maple Leafs"),
+            Map.entry("UTA", "Utah Hockey Club"),
+            Map.entry("VAN", "Vancouver Canucks"),
+            Map.entry("VGK", "Vegas Golden Knights"),
+            Map.entry("WSH", "Washington Capitals"),
+            Map.entry("WPG", "Winnipeg Jets"));
+
+    public Map<String, String> getTeamNames() {
+        return TEAM_NAMES;
+    }
+
+    public NhlScheduleResponse getSchedule(LocalDate date) {
+        String url = "https://api-web.nhle.com/v1/schedule/" + date.toString();
+        try {
+            return restTemplate.getForObject(url, NhlScheduleResponse.class);
+        } catch (Exception e) {
+            logger.error("Chyba při stahování rozvrhu pro {}: {}", date, e.getMessage());
+            return null;
+        }
     }
 
     private void processScheduleForDate(String dateStr) {

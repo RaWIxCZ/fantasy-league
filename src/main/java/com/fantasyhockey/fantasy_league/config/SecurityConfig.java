@@ -22,8 +22,25 @@ public class SecurityConfig {
                         // Všechno ostatní vyžaduje přihlášení:
                         .anyRequest().authenticated())
                 .formLogin((form) -> form
-                        .loginPage("/login") // Naše vlastní přihlašovací stránka (zatím ji nemáme)
+                        .loginPage("/login")
+                        .successHandler((request, response, authentication) -> {
+                            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                                response.setStatus(200);
+                            } else {
+                                response.sendRedirect("/");
+                            }
+                        })
+                        .failureHandler((request, response, exception) -> {
+                            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                                response.setStatus(401);
+                            } else {
+                                response.sendRedirect("/login?error");
+                            }
+                        })
                         .permitAll())
+                .rememberMe((remember) -> remember
+                        .key("uniqueAndSecret")
+                        .tokenValiditySeconds(86400)) // 1 den
                 .logout((logout) -> logout.permitAll());
 
         return http.build();

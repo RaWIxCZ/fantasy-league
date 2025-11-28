@@ -2,19 +2,295 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <title>Domů | Fantasy League</title>
+    <title>Centrum Zápasů | Fantasy League</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .day-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #dee2e6;
+        }
+
+        .day-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-color: #0d6efd;
+        }
+
+        .day-card.active {
+            background-color: #e7f1ff;
+            border-color: #0d6efd;
+            border-width: 2px;
+        }
+
+        .game-row {
+            transition: background-color 0.2s;
+        }
+
+        .game-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .team-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+
+        .live-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: #dc3545;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 
 <body class="bg-light">
 
     <div th:replace="~{fragments :: nav}"></div>
 
-    <div class="container-fluid px-4">
-        <!-- Empty body for now -->
+    <div class="container-fluid mt-4 px-4">
+        <div class="row">
+            <!-- MAIN CONTENT (75%) -->
+            <div class="col-lg-9">
+
+                <!-- Schedule Fragment -->
+                <div id="schedule-container" th:fragment="scheduleFragment">
+
+                    <!-- Week Selector -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+                        <button class="btn btn-outline-secondary" th:data-date="${currentDate.minusWeeks(1)}"
+                            onclick="loadWeek(this.getAttribute('data-date'))">
+                            <i class="bi bi-chevron-left"></i> Předchozí týden
+                        </button>
+
+                        <h4 class="m-0 fw-bold">
+                            <span
+                                th:text="${#temporals.format(currentDate.with(T(java.time.temporal.TemporalAdjusters).previousOrSame(T(java.time.DayOfWeek).MONDAY)), 'd. M.')}"></span>
+                            -
+                            <span
+                                th:text="${#temporals.format(currentDate.with(T(java.time.temporal.TemporalAdjusters).nextOrSame(T(java.time.DayOfWeek).SUNDAY)), 'd. M.')}"></span>
+                        </h4>
+
+                        <button class="btn btn-outline-secondary" th:data-date="${currentDate.plusWeeks(1)}"
+                            onclick="loadWeek(this.getAttribute('data-date'))">
+                            Další týden <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Day Cards -->
+                    <div class="row row-cols-2 row-cols-md-4 row-cols-lg-7 g-2 mb-4">
+                        <div th:each="day : ${schedule.gameWeek}" class="col">
+                            <div class="card h-100 day-card text-center p-2" th:data-date="${day.date}"
+                                onclick="showGames(this.getAttribute('data-date'), this)"
+                                th:classappend="${day.date == currentDate.toString()} ? 'active' : ''">
+                                <div class="fw-bold text-uppercase text-muted" style="font-size: 0.8rem;"
+                                    th:text="${#temporals.format(T(java.time.LocalDate).parse(day.date), 'EEE', new java.util.Locale('cs', 'CZ'))}">
+                                    PO
+                                </div>
+                                <div class="fs-5 fw-bold mb-1"
+                                    th:text="${#temporals.format(T(java.time.LocalDate).parse(day.date), 'd. M.')}">
+                                    27. 11.
+                                </div>
+                                <div class="text-muted small">
+                                    <span th:text="${day.games.size()}">0</span> zápasů
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Games List Container -->
+                    <div id="games-list-area">
+                        <div th:each="day : ${schedule.gameWeek}" th:id="'games-' + ${day.date}" class="games-group"
+                            th:style="${day.date == currentDate.toString()} ? '' : 'display: none;'">
+
+                            <h5 class="mb-3 border-bottom pb-2">
+                                Zápasy pro <span
+                                    th:text="${#temporals.format(T(java.time.LocalDate).parse(day.date), 'd. M. yyyy')}"></span>
+                            </h5>
+
+                            <div th:if="${day.games.isEmpty()}" class="text-center text-muted py-5">
+                                <i class="bi bi-calendar-x fs-1"></i>
+                                <p class="mt-2">Žádné zápasy v tento den.</p>
+                            </div>
+
+                            <div th:each="game : ${day.games}" class="card mb-3 shadow-sm border-0 game-row">
+                                <div class="card-body d-flex align-items-center justify-content-between py-3">
+
+                                    <!-- Time / State -->
+                                    <div class="text-center" style="width: 100px;">
+                                        <div th:if="${game.gameState == 'LIVE' or game.gameState == 'CRIT'}"
+                                            class="text-danger fw-bold">
+                                            <span class="live-indicator me-1"></span> LIVE
+                                        </div>
+                                        <div th:if="${game.gameState == 'FUT' or game.gameState == 'PRE'}"
+                                            class="fw-bold text-dark">
+                                            <span
+                                                th:text="${#temporals.format(T(java.time.ZonedDateTime).parse(game.startTimeUTC).withZoneSameInstant(T(java.time.ZoneId).of('Europe/Prague')), 'HH:mm')}"></span>
+                                        </div>
+                                        <div th:if="${game.gameState == 'OFF' or game.gameState == 'FINAL'}"
+                                            class="text-muted small">
+                                            KONEC
+                                        </div>
+                                    </div>
+
+                                    <!-- Matchup -->
+                                    <div class="d-flex align-items-center flex-grow-1 justify-content-center">
+                                        <!-- Home Team -->
+                                        <div class="d-flex align-items-center justify-content-end" style="width: 40%;">
+                                            <span class="fw-bold me-3 d-none d-md-block"
+                                                th:text="${teamNames.get(game.homeTeam.abbrev)}">Home</span>
+                                            <span class="fw-bold me-3 d-md-none"
+                                                th:text="${game.homeTeam.abbrev}">HOM</span>
+                                            <img th:src="${game.homeTeam.logo}" class="team-logo" alt="Home Logo">
+                                            <span class="fs-4 fw-bold ms-3"
+                                                th:text="${game.homeTeam.score != null ? game.homeTeam.score : '-'}">-</span>
+                                        </div>
+
+                                        <div class="mx-3 text-muted">vs</div>
+
+                                        <!-- Away Team -->
+                                        <div class="d-flex align-items-center justify-content-start"
+                                            style="width: 40%;">
+                                            <span class="fs-4 fw-bold me-3"
+                                                th:text="${game.awayTeam.score != null ? game.awayTeam.score : '-'}">-</span>
+                                            <img th:src="${game.awayTeam.logo}" class="team-logo" alt="Away Logo">
+                                            <span class="fw-bold ms-3 d-none d-md-block"
+                                                th:text="${teamNames.get(game.awayTeam.abbrev)}">Away</span>
+                                            <span class="fw-bold ms-3 d-md-none"
+                                                th:text="${game.awayTeam.abbrev}">AWY</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT SIDEBAR (25%) -->
+            <div class="col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold border-bottom">
+                        <i class="bi bi-broadcast text-danger me-2"></i> Právě se hraje
+                    </div>
+                    <div class="card-body p-0">
+                        <!-- We need to find live games across the whole week or just check today -->
+                        <!-- For simplicity, let's iterate all games in the week and show LIVE ones -->
+                        <div th:with="hasLiveGames=false">
+                            <th:block th:each="day : ${schedule.gameWeek}">
+                                <th:block th:each="game : ${day.games}">
+                                    <div th:if="${game.gameState == 'LIVE' or game.gameState == 'CRIT'}"
+                                        class="p-3 border-bottom">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge bg-danger">LIVE</span>
+                                            <small class="text-muted">3. třetina</small> <!-- Placeholder for period -->
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="${game.homeTeam.logo}" style="width: 25px; height: 25px;"
+                                                    class="me-2">
+                                                <span class="fw-bold" th:text="${game.homeTeam.abbrev}">HOM</span>
+                                            </div>
+                                            <span class="fw-bold fs-5" th:text="${game.homeTeam.score}">2</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <div class="d-flex align-items-center">
+                                                <img th:src="${game.awayTeam.logo}" style="width: 25px; height: 25px;"
+                                                    class="me-2">
+                                                <span class="fw-bold" th:text="${game.awayTeam.abbrev}">AWY</span>
+                                            </div>
+                                            <span class="fw-bold fs-5" th:text="${game.awayTeam.score}">1</span>
+                                        </div>
+                                    </div>
+                                </th:block>
+                            </th:block>
+
+                            <!-- Fallback if no live games (This logic is tricky in pure Thymeleaf without a variable, 
+                                 so we might just show a static message if the list is empty visually, 
+                                 or use JS to hide the empty message if items exist) -->
+                            <div id="no-live-games-msg" class="p-4 text-center text-muted">
+                                <i class="bi bi-pause-circle fs-1"></i>
+                                <p class="mt-2 mb-0">Žádné zápasy se aktuálně nehrají.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function loadWeek(date) {
+            fetch('/?date=' + date, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('schedule-container').outerHTML = html;
+                    checkLiveGames();
+                })
+                .catch(err => console.error(err));
+        }
+
+        function showGames(date, cardElement) {
+            // Hide all game groups
+            document.querySelectorAll('.games-group').forEach(el => el.style.display = 'none');
+
+            // Show selected
+            const target = document.getElementById('games-' + date);
+            if (target) {
+                target.style.display = 'block';
+
+                // Animation effect (optional)
+                target.style.opacity = 0;
+                target.style.transform = 'translateY(-10px)';
+                requestAnimationFrame(() => {
+                    target.style.transition = 'all 0.3s ease';
+                    target.style.opacity = 1;
+                    target.style.transform = 'translateY(0)';
+                });
+            }
+
+            // Update active card
+            document.querySelectorAll('.day-card').forEach(el => el.classList.remove('active'));
+            cardElement.classList.add('active');
+        }
+
+        function checkLiveGames() {
+            // Simple JS check to hide "No live games" if there are any live game elements
+            const liveGames = document.querySelectorAll('.live-indicator');
+            const msg = document.getElementById('no-live-games-msg');
+            if (liveGames.length > 0 && msg) {
+                msg.style.display = 'none';
+            } else if (msg) {
+                msg.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkLiveGames);
+    </script>
 </body>
 
 </html>

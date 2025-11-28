@@ -32,12 +32,26 @@ public class PlayerStats {
     private int goals;
     private int assists;
 
+    @Column(columnDefinition = "integer default 0")
+    private int plusMinus;
+
+    @Column(columnDefinition = "integer default 0")
+    private int shots;
+
+    @Column(columnDefinition = "integer default 0")
+    private int blockedShots;
+
+    @Column(columnDefinition = "integer default 0")
+    private int hits;
+
+    @Column(columnDefinition = "integer default 0")
+    private int pim;
+
     // Statistiky pro brankáře
     private int saves;
     private int shotsAgainst;
     private int goalsAgainst;
     private boolean win;
-
 
     // Kolik fantasy bodů za to dostal? (např. Gól=5, Asistence=3 -> Celkem 8)
     private int fantasyPoints;
