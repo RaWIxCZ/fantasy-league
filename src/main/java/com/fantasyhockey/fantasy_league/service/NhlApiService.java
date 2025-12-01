@@ -104,7 +104,7 @@ public class NhlApiService {
                     if (day.getDate().equals(yesterday)) {
                         for (NhlScheduleResponse.GameDto game : day.getGames()) {
                             logger.info("🚀 Nalezen zápas ID: {}. Zpracovávám...", game.getId());
-                            processGame(game.getId());
+                            processGame(game.getId(), LocalDate.parse(yesterday));
                         }
                     }
                 }
@@ -133,7 +133,7 @@ public class NhlApiService {
         playerRepository.save(player);
     }
 
-    public void processGame(Long gameId) {
+    public void processGame(Long gameId, LocalDate gameDate) {
         String url = "https://api-web.nhle.com/v1/gamecenter/" + gameId + "/boxscore";
 
         try {
@@ -144,16 +144,17 @@ public class NhlApiService {
             }
 
             processTeamStats(response.getPlayerByGameStats().getAwayTeam(), gameId,
-                    response.getAwayTeam().getScore() > response.getHomeTeam().getScore());
+                    response.getAwayTeam().getScore() > response.getHomeTeam().getScore(), gameDate);
             processTeamStats(response.getPlayerByGameStats().getHomeTeam(), gameId,
-                    response.getHomeTeam().getScore() > response.getAwayTeam().getScore());
+                    response.getHomeTeam().getScore() > response.getAwayTeam().getScore(), gameDate);
 
         } catch (Exception e) {
             logger.error("Chyba při stahování zápasu {}: {}", gameId, e.getMessage());
         }
     }
 
-    private void processTeamStats(NhlBoxscoreResponse.TeamStats teamStats, Long gameId, boolean isWinner) {
+    private void processTeamStats(NhlBoxscoreResponse.TeamStats teamStats, Long gameId, boolean isWinner,
+            LocalDate gameDate) {
         if (teamStats == null)
             return;
 
@@ -180,7 +181,7 @@ public class NhlApiService {
                             p.getBlockedShots(),
                             p.getHits(),
                             p.getPim(),
-                            LocalDate.now());
+                            gameDate);
                 } catch (Exception e) {
                     logger.warn("⚠️ CHYBA u hráče ID {}: {}", p.getPlayerId(), e.getMessage());
                 }
@@ -196,12 +197,19 @@ public class NhlApiService {
                             g.getSaves(),
                             g.getShotsAgainst(),
                             isWinner,
-                            LocalDate.now());
+                            gameDate);
                 } catch (Exception e) {
                     logger.warn("⚠️ CHYBA u brankáře ID {}: {}", g.getPlayerId(), e.getMessage());
                 }
             }
         }
+    }
+
+    public void resetAndImportSeasonData() {
+        logger.info("🧹 RESET: Mazání všech statistik a bodů týmů...");
+        pointsService.resetAllStats();
+        logger.info("✅ RESET: Hotovo. Spouštím import sezóny...");
+        importSeasonData();
     }
 
     public void importSeasonData() {
@@ -288,7 +296,7 @@ public class NhlApiService {
                 for (NhlScheduleResponse.GameWeekDto day : response.getGameWeek()) {
                     if (day.getDate().equals(dateStr)) {
                         for (NhlScheduleResponse.GameDto game : day.getGames()) {
-                            processGame(game.getId());
+                            processGame(game.getId(), LocalDate.parse(dateStr));
                             try {
                                 Thread.sleep(DELAY_BETWEEN_GAMES_MS);
                             } catch (InterruptedException e) {

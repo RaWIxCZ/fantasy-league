@@ -14,6 +14,9 @@ public class LeaderboardController {
 
     @GetMapping("/leaderboard")
     public String showLeaderboard(Model model) {
+        // Aktualizujeme statistiky (výhry/prohry)
+        teamService.updateStandings();
+
         // Pošleme seznam seřazených týmů do HTML
         model.addAttribute("teams", teamService.getLeaderboard());
         return "leaderboard";

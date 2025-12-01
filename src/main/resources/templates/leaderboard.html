@@ -24,6 +24,10 @@
               <th>#</th>
               <th>Tým</th>
               <th>Manažer</th>
+              <th class="text-center" title="Výhry">V</th>
+              <th class="text-center" title="Výhry v prodloužení">VP</th>
+              <th class="text-center" title="Prohry v prodloužení">PP</th>
+              <th class="text-center" title="Prohry">P</th>
               <th class="text-end">Body</th>
             </tr>
           </thead>
@@ -41,7 +45,12 @@
 
               <td th:text="${team.user.username}">Pepa</td>
 
-              <td class="text-end fw-bold text-primary" th:text="${team.totalFantasyPoints}">150</td>
+              <td class="text-center" th:text="${team.wins}">0</td>
+              <td class="text-center" th:text="${team.otWins}">0</td>
+              <td class="text-center" th:text="${team.otLosses}">0</td>
+              <td class="text-center" th:text="${team.losses}">0</td>
+
+              <td class="text-end fw-bold text-primary" th:text="${team.leaguePoints}">150</td>
             </tr>
           </tbody>
         </table>

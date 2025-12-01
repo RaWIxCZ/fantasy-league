@@ -1,7 +1,6 @@
 package com.fantasyhockey.fantasy_league.controller;
 
 import com.fantasyhockey.fantasy_league.model.GameWeek;
-import com.fantasyhockey.fantasy_league.model.Matchup;
 import com.fantasyhockey.fantasy_league.service.MatchupService;
 import com.fantasyhockey.fantasy_league.service.ScheduleService;
 import org.springframework.stereotype.Controller;
@@ -22,18 +21,39 @@ public class FaceoffController {
     }
 
     @GetMapping("/faceoff")
-    public String faceoff(Model model) {
+    public String faceoff(@org.springframework.web.bind.annotation.RequestParam(required = false) Integer week,
+            Model model) {
         // Ensure season is initialized (simple check for now)
         scheduleService.initializeSeason();
 
         // Update scores before displaying (to show live/latest data)
-        matchupService.updateScoresForCurrentWeek();
+        // We do this for the displayed week to ensure points are calculated
+        // even if it's a past week (e.g. after a reset)
 
-        GameWeek currentWeek = scheduleService.getCurrentWeek();
-        List<Matchup> matchups = matchupService.getCurrentMatchups();
+        GameWeek displayWeek;
+        if (week != null) {
+            try {
+                displayWeek = scheduleService.getWeekByNumber(week);
+            } catch (Exception e) {
+                displayWeek = scheduleService.getCurrentWeek();
+            }
+        } else {
+            displayWeek = scheduleService.getCurrentWeek();
+        }
 
-        model.addAttribute("currentWeek", currentWeek);
+        matchupService.updateScoresForWeek(displayWeek);
+
+        List<com.fantasyhockey.fantasy_league.dto.MatchupDetailDto> matchups = matchupService
+                .getMatchupDetails(displayWeek);
+
+        model.addAttribute("currentWeek", displayWeek);
         model.addAttribute("matchups", matchups);
+
+        // Navigation
+        int currentWeekNum = displayWeek.getWeekNumber();
+        model.addAttribute("prevWeek", currentWeekNum > 1 ? currentWeekNum - 1 : null);
+        // Assuming 20 weeks total for now, or check max
+        model.addAttribute("nextWeek", currentWeekNum < 20 ? currentWeekNum + 1 : null);
 
         return "faceoff";
     }

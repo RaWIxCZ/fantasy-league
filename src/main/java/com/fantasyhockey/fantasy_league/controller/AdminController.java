@@ -1,66 +1,34 @@
 package com.fantasyhockey.fantasy_league.controller;
 
 import com.fantasyhockey.fantasy_league.service.NhlApiService;
-import com.fantasyhockey.fantasy_league.service.PointsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.time.LocalDate;
-
 @Controller
 @RequiredArgsConstructor
+// @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    private final PointsService pointsService;
     private final NhlApiService nhlApiService;
-
-    // ENDPOINT: Simulace bodů (ruční)
-    @PostMapping("/admin/add-points")
-    public String simulatePoints(
-            @RequestParam("playerId") Long playerId,
-            @RequestParam("goals") int goals,
-            @RequestParam("assists") int assists) {
-
-        // Vygenerujeme unikátní falešné ID (např. aktuální čas),
-        // aby to prošlo kontrolou duplicity v PointsService
-        Long fakeGameId = System.currentTimeMillis();
-
-        // Teď posíláme 5 parametrů:
-        // Teď posíláme rozšířené parametry (pro jednoduchost 0 pro nové staty):
-        pointsService.addStatsForPlayer(
-                playerId,
-                fakeGameId, // <--- Nový parametr (falešné ID)
-                goals,
-                assists,
-                0, // plusMinus
-                0, // shots
-                0, // blockedShots
-                0, // hits
-                0, // pim
-                LocalDate.now());
-
-        return "redirect:/my-team";
-    }
 
     // ENDPOINT: Stažení jednoho zápasu
     @GetMapping("/admin/fetch-game")
     @ResponseBody
     public String fetchGameStats(@RequestParam("gameId") Long gameId) {
-        nhlApiService.processGame(gameId);
+        // Note: Manual fetch defaults to today's date. Use with caution for historical
+        // games.
+        nhlApiService.processGame(gameId, java.time.LocalDate.now());
         return "Zápas " + gameId + " zpracován!";
     }
 
-    // ENDPOINT: Import celé sezóny
-    @GetMapping("/admin/import-season")
+    @GetMapping("/admin/reimport-season")
     @ResponseBody
-    public String triggerSeasonImport() {
-        // Spustíme to ve vedlejším vlákně, aby nezamrzla stránka
-        new Thread(() -> nhlApiService.importSeasonData()).start();
-        return "🚀 Import sezóny spuštěn na pozadí! Sleduj konzoli v IntelliJ.";
+    public String reimportSeason() {
+        new Thread(() -> nhlApiService.resetAndImportSeasonData()).start();
+        return "🚀 RESET a IMPORT sezóny spuštěn na pozadí!";
     }
 
     // NOVÝ ENDPOINT: Import celé sezóny

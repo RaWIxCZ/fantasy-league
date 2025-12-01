@@ -150,4 +150,14 @@ public class PointsService {
 
         logger.info("✅ Body započteny pro brankáře: {} ({}b)", player.getLastName(), fantasyPoints);
     }
+
+    @Transactional
+    public void resetAllStats() {
+        statsRepository.deleteAll();
+        List<FantasyTeam> teams = teamRepository.findAll();
+        for (FantasyTeam team : teams) {
+            team.setTotalFantasyPoints(0);
+            teamRepository.save(team);
+        }
+    }
 }

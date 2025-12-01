@@ -21,7 +21,21 @@ public class FantasyTeam {
     // Defaultně 0, aby to nebylo null
     private int totalFantasyPoints = 0;
 
+    @Column(columnDefinition = "integer default 0")
+    private int wins = 0;
+    @Column(columnDefinition = "integer default 0")
+    private int losses = 0;
+    @Column(columnDefinition = "integer default 0")
+    private int otWins = 0;
+    @Column(columnDefinition = "integer default 0")
+    private int otLosses = 0;
+
+    @Column(columnDefinition = "integer default 0")
+    private int leaguePoints = 0;
+
     private String teamName;
+
+    private String logoUrl;
 
     // VAZBA 1:1 (Jeden tým patří jednomu uživateli)
     @OneToOne
@@ -30,11 +44,8 @@ public class FantasyTeam {
 
     // VAZBA M:N (Tým má seznam hráčů)
     @ManyToMany
-    @JoinTable(
-            name = "team_players", // Vznikne pomocná tabulka "team_players"
-            joinColumns = @JoinColumn(name = "team_id"),
-            inverseJoinColumns = @JoinColumn(name = "player_id")
-    )
+    @JoinTable(name = "team_players", // Vznikne pomocná tabulka "team_players"
+            joinColumns = @JoinColumn(name = "team_id"), inverseJoinColumns = @JoinColumn(name = "player_id"))
     private List<Player> players = new ArrayList<>();
 
     // Metoda pro přidání hráče (pomocná)

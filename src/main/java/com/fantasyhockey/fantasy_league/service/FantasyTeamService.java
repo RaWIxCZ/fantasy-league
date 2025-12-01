@@ -24,6 +24,7 @@ public class FantasyTeamService {
     private final UserRepository userRepository;
     private final PlayerRepository playerRepository;
     private final LineupSpotRepository lineupRepository;
+    private final com.fantasyhockey.fantasy_league.repository.MatchupRepository matchupRepository;
 
     public static final int MAX_FORWARDS = 11;
     public static final int MAX_DEFENSEMEN = 7;
@@ -97,7 +98,7 @@ public class FantasyTeamService {
     }
 
     public List<FantasyTeam> getLeaderboard() {
-        return teamRepository.findAllByOrderByTotalFantasyPointsDesc();
+        return teamRepository.findAllByOrderByLeaguePointsDesc();
     }
 
     @Transactional
@@ -133,5 +134,109 @@ public class FantasyTeamService {
         FantasyTeam team = getTeamByUsername(username).orElseThrow();
         lineupRepository.deleteByTeamAndSlotName(team, oldSlotName);
         saveLineupSpot(username, playerId, newSlotName);
+    }
+
+    private final com.fantasyhockey.fantasy_league.repository.PlayerStatsRepository playerStatsRepository;
+
+    @Transactional
+    public void updateStandings() {
+        List<FantasyTeam> teams = teamRepository.findAll();
+        // Reset stats
+        for (FantasyTeam team : teams) {
+            team.setWins(0);
+            team.setLosses(0);
+            team.setOtWins(0);
+            team.setOtLosses(0);
+            team.setLeaguePoints(0);
+        }
+
+        List<com.fantasyhockey.fantasy_league.model.Matchup> allMatchups = matchupRepository.findAll();
+
+        for (com.fantasyhockey.fantasy_league.model.Matchup m : allMatchups) {
+            // Only count completed weeks or past weeks
+            if (m.getGameWeek().isCompleted() || m.getGameWeek().getEndDate().isBefore(java.time.LocalDate.now())) {
+
+                // Recalculate scores for historical accuracy based on current roster (as per
+                // plan)
+                double homeScore = calculateTeamScoreForPeriod(m.getHomeTeam(), m.getGameWeek().getStartDate(),
+                        m.getGameWeek().getEndDate());
+                double awayScore = calculateTeamScoreForPeriod(m.getAwayTeam(), m.getGameWeek().getStartDate(),
+                        m.getGameWeek().getEndDate());
+
+                m.setHomeScore(homeScore);
+                m.setAwayScore(awayScore);
+                matchupRepository.save(m); // Save updated scores
+
+                if (homeScore > awayScore) {
+                    // Home Win
+                    m.getHomeTeam().setWins(m.getHomeTeam().getWins() + 1);
+                    m.getHomeTeam().setLeaguePoints(m.getHomeTeam().getLeaguePoints() + 3);
+
+                    m.getAwayTeam().setLosses(m.getAwayTeam().getLosses() + 1);
+                    // 0 points for loss
+                } else if (awayScore > homeScore) {
+                    // Away Win
+                    m.getAwayTeam().setWins(m.getAwayTeam().getWins() + 1);
+                    m.getAwayTeam().setLeaguePoints(m.getAwayTeam().getLeaguePoints() + 3);
+
+                    m.getHomeTeam().setLosses(m.getHomeTeam().getLosses() + 1);
+                    // 0 points for loss
+                } else {
+                    // TIE -> Overtime Logic
+                    // 1. Best player points
+                    double homeBest = getBestPlayerPoints(m.getHomeTeam(), m.getGameWeek().getStartDate(),
+                            m.getGameWeek().getEndDate());
+                    double awayBest = getBestPlayerPoints(m.getAwayTeam(), m.getGameWeek().getStartDate(),
+                            m.getGameWeek().getEndDate());
+
+                    if (awayBest > homeBest) {
+                        // Away wins OT
+                        m.getAwayTeam().setOtWins(m.getAwayTeam().getOtWins() + 1);
+                        m.getAwayTeam().setLeaguePoints(m.getAwayTeam().getLeaguePoints() + 2);
+
+                        m.getHomeTeam().setOtLosses(m.getHomeTeam().getOtLosses() + 1);
+                        m.getHomeTeam().setLeaguePoints(m.getHomeTeam().getLeaguePoints() + 1);
+                    } else {
+                        // Home wins OT (Better best player OR Tie in best player -> Home advantage)
+                        m.getHomeTeam().setOtWins(m.getHomeTeam().getOtWins() + 1);
+                        m.getHomeTeam().setLeaguePoints(m.getHomeTeam().getLeaguePoints() + 2);
+
+                        m.getAwayTeam().setOtLosses(m.getAwayTeam().getOtLosses() + 1);
+                        m.getAwayTeam().setLeaguePoints(m.getAwayTeam().getLeaguePoints() + 1);
+                    }
+                }
+            }
+        }
+
+        teamRepository.saveAll(teams);
+    }
+
+    private double calculateTeamScoreForPeriod(FantasyTeam team, java.time.LocalDate start, java.time.LocalDate end) {
+        if (team == null || team.getPlayers().isEmpty())
+            return 0.0;
+
+        return team.getPlayers().stream()
+                .mapToDouble(player -> {
+                    return playerStatsRepository.findByPlayerIdAndDateBetween(player.getId(), start, end)
+                            .stream()
+                            .mapToDouble(stats -> stats.getFantasyPoints())
+                            .sum();
+                })
+                .sum();
+    }
+
+    private double getBestPlayerPoints(FantasyTeam team, java.time.LocalDate start, java.time.LocalDate end) {
+        if (team == null || team.getPlayers().isEmpty())
+            return 0.0;
+
+        return team.getPlayers().stream()
+                .mapToDouble(player -> {
+                    return playerStatsRepository.findByPlayerIdAndDateBetween(player.getId(), start, end)
+                            .stream()
+                            .mapToDouble(stats -> stats.getFantasyPoints())
+                            .sum();
+                })
+                .max()
+                .orElse(0.0);
     }
 }

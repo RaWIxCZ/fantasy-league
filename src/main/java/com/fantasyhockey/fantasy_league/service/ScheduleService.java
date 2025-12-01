@@ -9,9 +9,7 @@ import com.fantasyhockey.fantasy_league.repository.MatchupRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,24 +29,57 @@ public class ScheduleService {
 
     @Transactional
     public void initializeSeason() {
+        // Check if we need to reset the schedule (if Week 1 start date is incorrect)
+        gameWeekRepository.findByWeekNumber(1).ifPresent(week1 -> {
+            if (!week1.getStartDate().equals(LocalDate.of(2025, 10, 7))) {
+                matchupRepository.deleteAll();
+                gameWeekRepository.deleteAll();
+            }
+        });
+
         if (gameWeekRepository.count() > 0) {
-            return; // Season already initialized
+            return; // Season already initialized correctly
         }
 
-        // 1. Create Game Weeks (e.g., 20 weeks starting from current Monday)
-        LocalDate startDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        // 1. Create Game Weeks
+        // Week 1: Oct 7 (Tue) - Oct 12 (Sun)
+        // Week 2+: Mon - Sun
+        LocalDate startDate = LocalDate.of(2025, 10, 7);
         List<GameWeek> weeks = new ArrayList<>();
+        LocalDate today = LocalDate.now();
 
         for (int i = 1; i <= 20; i++) {
             GameWeek week = new GameWeek();
             week.setWeekNumber(i);
             week.setStartDate(startDate);
-            week.setEndDate(startDate.plusDays(6)); // Sunday
-            week.setCurrent(i == 1); // First week is current
-            week.setCompleted(false);
+
+            if (i == 1) {
+                // First week ends on Sunday Oct 12
+                week.setEndDate(LocalDate.of(2025, 10, 12));
+            } else {
+                // Subsequent weeks are 7 days (Mon-Sun)
+                // startDate is already set to previous end + 1 (Monday)
+                week.setEndDate(startDate.plusDays(6));
+            }
+
+            boolean isCompleted = week.getEndDate().isBefore(today);
+            boolean isCurrent = !isCompleted && !week.getStartDate().isAfter(today);
+
+            week.setCompleted(isCompleted);
+            week.setCurrent(isCurrent);
 
             weeks.add(gameWeekRepository.save(week));
-            startDate = startDate.plusWeeks(1);
+
+            // Set start date for next week (Monday)
+            startDate = week.getEndDate().plusDays(1);
+        }
+
+        // Ensure at least one week is current if season hasn't started or ended?
+        if (weeks.stream().noneMatch(GameWeek::isCurrent) && !weeks.isEmpty()) {
+            if (today.isBefore(weeks.get(0).getStartDate())) {
+                weeks.get(0).setCurrent(true);
+                gameWeekRepository.save(weeks.get(0));
+            }
         }
 
         // 2. Generate Schedule
@@ -111,5 +142,10 @@ public class ScheduleService {
     public GameWeek getCurrentWeek() {
         return gameWeekRepository.findByIsCurrentTrue()
                 .orElseThrow(() -> new RuntimeException("No current game week found"));
+    }
+
+    public GameWeek getWeekByNumber(int number) {
+        return gameWeekRepository.findByWeekNumber(number)
+                .orElseThrow(() -> new RuntimeException("Week " + number + " not found"));
     }
 }

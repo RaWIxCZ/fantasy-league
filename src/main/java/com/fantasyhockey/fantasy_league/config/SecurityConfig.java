@@ -10,7 +10,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.remember-me.key}")
+    private String rememberMeKey;
 
     // 1. Definice pravidel přístupu (Filter Chain)
     @Bean
@@ -18,7 +22,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((requests) -> requests
                         // Tyto stránky povolíme všem (i nepřihlášeným):
-                        .requestMatchers("/register", "/save-user", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/register", "/save-user", "/css/**", "/js/**", "/images/**", "/admin/**")
+                        .permitAll()
                         // Všechno ostatní vyžaduje přihlášení:
                         .anyRequest().authenticated())
                 .formLogin((form) -> form
@@ -39,7 +44,7 @@ public class SecurityConfig {
                         })
                         .permitAll())
                 .rememberMe((remember) -> remember
-                        .key("uniqueAndSecret")
+                        .key(rememberMeKey)
                         .tokenValiditySeconds(86400)) // 1 den
                 .logout((logout) -> logout.permitAll());
 
