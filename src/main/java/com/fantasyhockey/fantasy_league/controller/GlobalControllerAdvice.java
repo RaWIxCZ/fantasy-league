@@ -11,4 +11,25 @@ public class GlobalControllerAdvice {
     public String requestURI(HttpServletRequest request) {
         return request.getRequestURI();
     }
+
+    @ModelAttribute("isAdmin")
+    public boolean isAdmin() {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ADMIN"));
+    }
+
+    @ModelAttribute("currentUsername")
+    public String currentUsername() {
+        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        return authentication.getName();
+    }
 }

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Live Zápasy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+        }
+
+        /* Matchup Header Styles */
+        .matchup-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .matchup-header {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            /* Pushed to edges */
+            /* Centered content */
+            background: #fff;
+            position: relative;
+        }
+
+        .matchup-header:hover {
+            background: #fcfcfc;
+        }
+
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            /* Take up space */
+            /* width: 35%; Removed fixed width */
+        }
+
+        .team-info.away {
+            justify-content: flex-end;
+            /* Align right */
+            text-align: right;
+        }
+
+        .team-info.home {
+            justify-content: flex-start;
+            /* Align left */
+            text-align: left;
+        }
+
+        .team-logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            border: 3px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* padding: 0; */
+        }
+
+        .score-container {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: grid;
+            grid-template-columns: 1fr 20px 1fr;
+            /* Rigid center column */
+            align-items: center;
+            width: 260px;
+            /* Increased to allow 3-digit scores without shifting */
+            font-size: 2.5rem;
+            font-weight: 800;
+            z-index: 5;
+            pointer-events: none;
+            /* Let clicks pass through to the header */
+        }
+
+        .score-home {
+            color: #2980b9;
+            text-align: right;
+        }
+
+        /* Blue */
+        .score-away {
+            color: #c0392b;
+            text-align: left;
+        }
+
+        /* Red */
+
+        .score-divider {
+            color: #bdc3c7;
+            font-size: 1.5rem;
+            text-align: center;
+            width: 20px;
+            /* Force consistent width for colons to match grid column */
+        }
+
+        .arrow-icon-container {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* LIVE RINK STYLES (Horizontal) */
+        .rink-collapse {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+
+        .rink-collapse.show {
+            max-height: 1000px;
+            /* Arbitrary large height */
+        }
+
+        .live-rink-container {
+            width: 100%;
+            height: 500px;
+            /* Fixed height for the rink */
+            position: relative;
+            background-color: #eef5f9;
+            border-top: 5px solid #bdc3c7;
+            border-bottom: 5px solid #bdc3c7;
+            margin-top: 0;
+            overflow: hidden;
+
+            /* Horizontal Ice Rink Markings */
+            background-image:
+                /* Red Center Line */
+                linear-gradient(to right, transparent 49.8%, rgba(192, 57, 43, 0.5) 49.8%, rgba(192, 57, 43, 0.5) 50.2%, transparent 50.2%),
+                /* Blue Lines */
+                linear-gradient(to right, transparent 35%, rgba(41, 128, 185, 0.3) 35%, rgba(41, 128, 185, 0.3) 35.5%, transparent 35.5%),
+                linear-gradient(to right, transparent 64.5%, rgba(41, 128, 185, 0.3) 64.5%, rgba(41, 128, 185, 0.3) 65%, transparent 65%),
+                /* Center Circle */
+                radial-gradient(circle at 50% 50%, transparent 60px, rgba(192, 57, 43, 0.5) 61px, rgba(192, 57, 43, 0.5) 63px, transparent 64px);
+        }
+
+        /* Player Card on Ice */
+        .live-player-card {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .live-player-img {
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            object-fit: cover;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .live-player-name {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-top: -10px;
+            z-index: 2;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        /* 1st Formation (Large) */
+        .formation-1 .live-player-img {
+            width: 70px;
+            height: 70px;
+            border-color: #f1c40f;
+            /* Gold border for line 1 */
+        }
+
+        .formation-1 .live-player-name {
+            font-size: 0.9rem;
+            padding: 3px 10px;
+        }
+
+        /* 2nd Formation (Small) */
+        .formation-2 .live-player-img {
+            width: 40px;
+            height: 40px;
+            border-color: #bdc3c7;
+            /* Silver border for line 2 */
+        }
+
+        .formation-2 .live-player-name {
+            font-size: 0.65rem;
+            opacity: 0.9;
+        }
+
+        /* Grayed out state (Not Playing) */
+        .player-inactive {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+
+        .player-active {
+            filter: none;
+            opacity: 1;
+        }
+
+        /* Team Colors / Sides */
+        /* Home (Left Side) */
+        .home-team-zone {
+            /* Logic handled by absolute positioning in specific slots */
+        }
+
+        /* Away (Right Side) */
+        .away-team-zone {
+            /* Logic handled by absolute positioning */
+        }
+
+        /* Positions (Percentages for Horizontal Layout 0-100%) */
+
+        /* HOME (Attacking Right -> Defending Left?) Usually: Home Left, Away Right. */
+
+        /* HOME GOALIE */
+        .pos-home-g {
+            left: 5%;
+            top: 50%;
+        }
+
+        /* HOME DEFENSE (Line 1) */
+        .pos-home-d1-l1 {
+            left: 15%;
+            top: 30%;
+        }
+
+        .pos-home-d2-l1 {
+            left: 15%;
+            top: 70%;
+        }
+
+        /* HOME DEFENSE (Line 2) - Smaller, slightly behind/offset */
+        .pos-home-d1-l2 {
+            left: 10%;
+            top: 20%;
+        }
+
+        .pos-home-d2-l2 {
+            left: 10%;
+            top: 80%;
+        }
+
+        /* HOME FORWARDS (Line 1) */
+        .pos-home-rw-l1 {
+            left: 35%;
+            top: 20%;
+        }
+
+        .pos-home-c-l1 {
+            left: 30%;
+            top: 50%;
+        }
+
+        .pos-home-lw-l1 {
+            left: 35%;
+            top: 80%;
+        }
+
+        /* HOME FORWARDS (Line 2) - Flanking */
+        .pos-home-rw-l2 {
+            left: 28%;
+            top: 15%;
+        }
+
+        .pos-home-c-l2 {
+            left: 25%;
+            top: 50%;
+        }
+
+        /* Behind C1? */
+        .pos-home-lw-l2 {
+            left: 28%;
+            top: 85%;
+        }
+
+
+        /* AWAY (Right Side) */
+        /* AWAY GOALIE */
+        .pos-away-g {
+            left: 95%;
+            top: 50%;
+        }
+
+        /* AWAY DEFENSE (Line 1) */
+        .pos-away-d1-l1 {
+            left: 85%;
+            top: 30%;
+        }
+
+        .pos-away-d2-l1 {
+            left: 85%;
+            top: 70%;
+        }
+
+        /* AWAY DEFENSE (Line 2) */
+        .pos-away-d1-l2 {
+            left: 90%;
+            top: 20%;
+        }
+
+        .pos-away-d2-l2 {
+            left: 90%;
+            top: 80%;
+        }
+
+        /* AWAY FORWARDS (Line 1) */
+        .pos-away-rw-l1 {
+            left: 65%;
+            top: 20%;
+        }
+
+        .pos-away-c-l1 {
+            left: 70%;
+            top: 50%;
+        }
+
+        .pos-away-lw-l1 {
+            left: 65%;
+            top: 80%;
+        }
+
+        /* AWAY FORWARDS (Line 2) */
+        .pos-away-rw-l2 {
+            left: 72%;
+            top: 15%;
+        }
+
+        /* Mirrored */
+        .pos-away-c-l2 {
+            left: 75%;
+            top: 50%;
+        }
+
+        .pos-away-lw-l2 {
+            left: 72%;
+            top: 85%;
+        }
+
+        .arrow-icon {
+            transition: transform 0.3s;
+        }
+
+        .collapsed .arrow-icon {
+            transform: rotate(-90deg);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div th:replace="~{fragments :: nav}"></div>
+
+    <div class="container mt-4">
+        <h1 class="text-center mb-4 display-5 fw-bold text-uppercase">Live Centrum</h1>
+
+        <div th:if="${liveMatchups.isEmpty()}" class="alert alert-info text-center">
+            Žádné zápasy pro tento týden.
+        </div>
+
+        <div th:each="data : ${liveMatchups}" class="matchup-card">
+            <!-- HEADER (CLICKABLE) -->
+            <div class="matchup-header" onclick="toggleRink(this)">
+
+                <!-- HOME TEAM (Left) -->
+                <div class="team-info home">
+                    <div class="team-logo-circle">
+                        <img th:if="${data.matchup.homeTeam.logoUrl != null}" th:src="${data.matchup.homeTeam.logoUrl}"
+                            class="team-logo-img">
+                        <span th:if="${data.matchup.homeTeam.logoUrl == null}"
+                            th:text="${#strings.substring(data.matchup.homeTeam.teamName,0,1)}"
+                            class="fs-4 fw-bold text-secondary">H</span>
+                    </div>
+                    <div class="team-name h5 fw-bold mb-0" th:text="${data.matchup.homeTeam.teamName}">Home</div>
+                </div>
+
+                <!-- SCORE (Center) -->
+                <div class="score-container">
+                    <span class="score-home" th:text="${#numbers.formatDecimal(data.matchup.homeScore, 1, 0)}">0</span>
+                    <span class="score-divider">:</span>
+                    <span class="score-away" th:text="${#numbers.formatDecimal(data.matchup.awayScore, 1, 0)}">0</span>
+                </div>
+
+                <!-- AWAY TEAM (Right) -->
+                <div class="team-info away">
+                    <div class="team-name h5 fw-bold mb-0" th:text="${data.matchup.awayTeam.teamName}">Away</div>
+                    <div class="team-logo-circle">
+                        <img th:if="${data.matchup.awayTeam.logoUrl != null}" th:src="${data.matchup.awayTeam.logoUrl}"
+                            class="team-logo-img">
+                        <span th:if="${data.matchup.awayTeam.logoUrl == null}"
+                            th:text="${#strings.substring(data.matchup.awayTeam.teamName,0,1)}"
+                            class="fs-4 fw-bold text-secondary">A</span>
+                    </div>
+                </div>
+
+                <!-- Arrow removed -->
+            </div>
+
+            <!-- RINK VISUALIZATION -->
+            <div class="rink-collapse">
+                <div class="live-rink-container">
+
+                    <!-- HOME TEAM PLAYERS -->
+                    <th:block th:with="lineup=${data.homeLineup}">
+                        <!-- L1 -->
+                        <div th:replace="~{:: playerCard(${lineup['L1_LW']}, 'pos-home-lw-l1 formation-1 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_C']},  'pos-home-c-l1  formation-1 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_RW']}, 'pos-home-rw-l1 formation-1 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_LD']}, 'pos-home-d1-l1 formation-1 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_RD']}, 'pos-home-d2-l1 formation-1 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['GK']},    'pos-home-g     formation-1 home-team')}">
+                        </div>
+
+                        <!-- L2 -->
+                        <div th:replace="~{:: playerCard(${lineup['L2_LW']}, 'pos-home-lw-l2 formation-2 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_C']},  'pos-home-c-l2  formation-2 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_RW']}, 'pos-home-rw-l2 formation-2 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_LD']}, 'pos-home-d1-l2 formation-2 home-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_RD']}, 'pos-home-d2-l2 formation-2 home-team')}">
+                        </div>
+                    </th:block>
+
+                    <!-- AWAY TEAM PLAYERS -->
+                    <th:block th:with="lineup=${data.awayLineup}">
+                        <!-- L1 -->
+                        <div th:replace="~{:: playerCard(${lineup['L1_LW']}, 'pos-away-lw-l1 formation-1 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_C']},  'pos-away-c-l1  formation-1 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_RW']}, 'pos-away-rw-l1 formation-1 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_LD']}, 'pos-away-d1-l1 formation-1 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L1_RD']}, 'pos-away-d2-l1 formation-1 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['GK']},    'pos-away-g     formation-1 away-team')}">
+                        </div>
+
+                        <!-- L2 -->
+                        <div th:replace="~{:: playerCard(${lineup['L2_LW']}, 'pos-away-lw-l2 formation-2 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_C']},  'pos-away-c-l2  formation-2 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_RW']}, 'pos-away-rw-l2 formation-2 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_LD']}, 'pos-away-d1-l2 formation-2 away-team')}">
+                        </div>
+                        <div th:replace="~{:: playerCard(${lineup['L2_RD']}, 'pos-away-d2-l2 formation-2 away-team')}">
+                        </div>
+                    </th:block>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fragment for Player Card to reduce duplication -->
+    <div th:fragment="playerCard(spot, cssClass)" th:if="${spot != null}"
+        th:class="'live-player-card ' + ${cssClass} + (${gameStatuses[spot.player.teamName] == 'LIVE'} ? ' player-active' : ' player-inactive')">
+        <img th:src="${spot.player.headshotUrl}" class="live-player-img"
+            onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+        <div class="live-player-name" th:text="${spot.player.lastName}">Name</div>
+        <!-- Debug Status: <span th:text="${gameStatuses[spot.player.teamName]}"></span> -->
+    </div>
+
+    <script>
+        function toggleRink(header) {
+            const collapse = header.nextElementSibling;
+
+            if (collapse.classList.contains('show')) {
+                collapse.classList.remove('show');
+            } else {
+                collapse.classList.add('show');
+            }
+        }
+
+        // Auto-expand removed as per request
+        // document.addEventListener('DOMContentLoaded', () => { ... });
+    </script>
+</body>
+
+</html>

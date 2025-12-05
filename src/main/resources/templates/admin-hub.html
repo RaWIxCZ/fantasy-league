@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Admin Hub | Fantasy League</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+
+<body class="bg-light">
+
+    <div th:replace="~{fragments :: nav}"></div>
+
+    <div class="container mt-4">
+        <h1 class="mb-4 text-center fw-bold text-primary">Admin Hub</h1>
+
+        <!-- Success Messages -->
+        <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:if="${param.success[0] == 'statsUpdated'}">Statistiky byly úspěšně aktualizovány!</span>
+            <span th:if="${param.success[0] == 'statsUpdateStarted'}">Aktualizace statistik byla spuštěna na
+                pozadí!</span>
+            <span th:if="${param.success[0] == 'playerRemoved'}">Hráč byl úspěšně odstraněn z týmu!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row g-4">
+            <!-- Stats Update Card -->
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-white fw-bold border-bottom">
+                        <i class="bi bi-calendar-range text-primary me-2"></i> Aktualizace statistik
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">Vyberte rozmezí dat pro aktualizaci statistik ze serveru NHL.</p>
+                        <form action="/admin/update-stats" method="post">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Od:</label>
+                                <input type="date" class="form-control" id="startDate" name="startDate" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">Do:</label>
+                                <input type="date" class="form-control" id="endDate" name="endDate" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-arrow-repeat"></i> Aktualizovat statistiky
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Management Card -->
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100 border-0">
+                    <div class="card-header bg-white fw-bold border-bottom">
+                        <i class="bi bi-people text-danger me-2"></i> Správa týmů
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">Odstranění hráče z týmu.</p>
+
+                        <div class="accordion" id="teamsAccordion">
+                            <div th:each="team : ${teams}" class="accordion-item">
+                                <h2 class="accordion-header" th:id="'heading' + ${team.id}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        th:data-bs-target="'#collapse' + ${team.id}" aria-expanded="false"
+                                        th:aria-controls="'collapse' + ${team.id}">
+                                        <span th:text="${team.teamName}">Team Name</span>
+                                        <span class="badge bg-secondary ms-2"
+                                            th:text="${team.user.username}">User</span>
+                                    </button>
+                                </h2>
+                                <div th:id="'collapse' + ${team.id}" class="accordion-collapse collapse"
+                                    th:aria-labelledby="'heading' + ${team.id}" data-bs-parent="#teamsAccordion">
+                                    <div class="accordion-body p-0">
+                                        <ul class="list-group list-group-flush">
+                                            <li th:each="player : ${team.players}"
+                                                class="list-group-item d-flex justify-content-between align-items-center">
+                                                <span>
+                                                    <span class="fw-bold"
+                                                        th:text="${player.firstName + ' ' + player.lastName}">Player
+                                                        Name</span>
+                                                    <span class="badge bg-light text-dark border ms-1"
+                                                        th:text="${player.position}">POS</span>
+                                                </span>
+                                                <form action="/admin/remove-player" method="post" class="d-inline"
+                                                    onsubmit="return confirm('Opravdu chcete odstranit tohoto hráče z týmu?');">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}"
+                                                        th:value="${_csrf.token}" />
+                                                    <input type="hidden" name="teamId" th:value="${team.id}" />
+                                                    <input type="hidden" name="playerId" th:value="${player.id}" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li th:if="${team.players.isEmpty()}"
+                                                class="list-group-item text-muted text-center">
+                                                Žádní hráči v týmu.
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other Actions -->
+        <div class="row g-4 mt-2">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white fw-bold border-bottom">
+                        <i class="bi bi-tools text-secondary me-2"></i> Další nástroje
+                    </div>
+                    <div class="card-body d-flex gap-3 flex-wrap">
+                        <a href="/admin/reimport-season" class="btn btn-outline-warning" target="_blank">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset & Import Sezóny
+                        </a>
+                        <a href="/admin/import-all-teams" class="btn btn-outline-info" target="_blank">
+                            <i class="bi bi-cloud-download"></i> Import Všech Týmů (Soupisky)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Set default dates to yesterday and today
+        document.addEventListener('DOMContentLoaded', function () {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            document.getElementById('endDate').valueAsDate = today;
+            document.getElementById('startDate').valueAsDate = yesterday;
+        });
+    </script>
+</body>
+
+</html>

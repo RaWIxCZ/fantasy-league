@@ -47,6 +47,7 @@ public class FaceoffController {
                 .getMatchupDetails(displayWeek);
 
         model.addAttribute("currentWeek", displayWeek);
+        model.addAttribute("actualCurrentWeek", scheduleService.getCurrentWeek());
         model.addAttribute("matchups", matchups);
 
         // Navigation

@@ -212,15 +212,12 @@ public class NhlApiService {
         importSeasonData();
     }
 
-    public void importSeasonData() {
-        LocalDate startDate = SEASON_START_DATE;
-        LocalDate today = LocalDate.now();
-
-        logger.info("🚀 START: Bezpečný hromadný import sezóny od {} do {}", startDate, today);
+    public void updateStatsForDateRange(LocalDate startDate, LocalDate endDate) {
+        logger.info("🚀 START: Aktualizace statistik od {} do {}", startDate, endDate);
 
         LocalDate currentDate = startDate;
 
-        while (currentDate.isBefore(today) || currentDate.equals(today)) {
+        while (currentDate.isBefore(endDate) || currentDate.equals(endDate)) {
             String dateStr = currentDate.toString();
             logger.info("📅 Zpracovávám den: {}", dateStr);
 
@@ -236,7 +233,13 @@ public class NhlApiService {
             }
         }
 
-        logger.info("🏁 KONEC: Import sezóny dokončen.");
+        logger.info("🏁 KONEC: Aktualizace statistik dokončena.");
+    }
+
+    public void importSeasonData() {
+        LocalDate startDate = SEASON_START_DATE;
+        LocalDate today = LocalDate.now();
+        updateStatsForDateRange(startDate, today);
     }
 
     private static final Map<String, String> TEAM_NAMES = Map.ofEntries(

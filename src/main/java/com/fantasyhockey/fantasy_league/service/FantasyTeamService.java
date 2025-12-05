@@ -97,9 +97,25 @@ public class FantasyTeamService {
         teamRepository.save(team);
     }
 
+    @Transactional
+    public void removePlayerFromTeam(Long playerId, Long teamId) {
+        FantasyTeam team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new RuntimeException("Tým nenalezen"));
+
+        boolean removed = team.getPlayers().removeIf(player -> player.getId().equals(playerId));
+
+        if (!removed) {
+            throw new RuntimeException("Hráč v týmu nebyl nalezen!");
+        }
+
+        teamRepository.save(team);
+    }
+
     public List<FantasyTeam> getLeaderboard() {
         return teamRepository.findAllByOrderByLeaguePointsDesc();
     }
+
+    private final RosterLockingService rosterLockingService;
 
     @Transactional
     public void saveLineupSpot(String username, Long playerId, String slotName) {
@@ -109,8 +125,16 @@ public class FantasyTeamService {
         Player player = playerRepository.findById(Objects.requireNonNull(playerId))
                 .orElseThrow(() -> new RuntimeException("Hráč nenalezen"));
 
+        // Check if the player entering the slot is locked
+        validatePlayerNotLocked(player);
+
         LineupSpot spot = lineupRepository.findByTeamAndSlotName(team, slotName)
                 .orElse(new LineupSpot());
+
+        // Check if the player currently in this slot (being replaced) is locked
+        if (spot.getPlayer() != null) {
+            validatePlayerNotLocked(spot.getPlayer());
+        }
 
         spot.setTeam(team);
         spot.setPlayer(player);
@@ -122,6 +146,12 @@ public class FantasyTeamService {
     @Transactional
     public void removePlayerFromSlot(String username, String slotName) {
         FantasyTeam team = getTeamByUsername(username).orElseThrow();
+
+        Optional<LineupSpot> spotOpt = lineupRepository.findByTeamAndSlotName(team, slotName);
+        if (spotOpt.isPresent()) {
+            validatePlayerNotLocked(spotOpt.get().getPlayer());
+        }
+
         lineupRepository.deleteByTeamAndSlotName(team, slotName);
     }
 
@@ -131,9 +161,27 @@ public class FantasyTeamService {
 
     @Transactional
     public void movePlayer(String username, Long playerId, String newSlotName, String oldSlotName) {
+        // Find the player being moved to ensure they aren't locked
+        Player player = playerRepository.findById(playerId).orElseThrow();
+        validatePlayerNotLocked(player);
+
         FantasyTeam team = getTeamByUsername(username).orElseThrow();
+
+        // Ensure the spot we are leaving doesn't contain a DIFFERENT locked player
+        // (should be the same player, but good to check)
+        // Actually, logic is: We take player from OldSlot.
+        // So validation of 'player' covers OldSlot occupant (unless OldSlot had someone
+        // else?? No, movePlayer implies moving THAT player).
+
         lineupRepository.deleteByTeamAndSlotName(team, oldSlotName);
         saveLineupSpot(username, playerId, newSlotName);
+    }
+
+    private void validatePlayerNotLocked(Player player) {
+        if (rosterLockingService.getLockedTeams().contains(player.getTeamName())) {
+            throw new RuntimeException(
+                    "Hráč " + player.getLastName() + " již hraje (nebo dohrál) a nelze s ním hýbat!");
+        }
     }
 
     private final com.fantasyhockey.fantasy_league.repository.PlayerStatsRepository playerStatsRepository;
@@ -151,21 +199,31 @@ public class FantasyTeamService {
         }
 
         List<com.fantasyhockey.fantasy_league.model.Matchup> allMatchups = matchupRepository.findAll();
+        java.time.LocalDate today = java.time.LocalDate.now();
 
         for (com.fantasyhockey.fantasy_league.model.Matchup m : allMatchups) {
-            // Only count completed weeks or past weeks
-            if (m.getGameWeek().isCompleted() || m.getGameWeek().getEndDate().isBefore(java.time.LocalDate.now())) {
+            boolean isCompleted = m.getGameWeek().isCompleted();
+            boolean isPast = m.getGameWeek().getEndDate().isBefore(today);
 
-                // Recalculate scores for historical accuracy based on current roster (as per
-                // plan)
-                double homeScore = calculateTeamScoreForPeriod(m.getHomeTeam(), m.getGameWeek().getStartDate(),
-                        m.getGameWeek().getEndDate());
-                double awayScore = calculateTeamScoreForPeriod(m.getAwayTeam(), m.getGameWeek().getStartDate(),
-                        m.getGameWeek().getEndDate());
+            if (isCompleted || isPast) {
+                double homeScore;
+                double awayScore;
 
-                m.setHomeScore(homeScore);
-                m.setAwayScore(awayScore);
-                matchupRepository.save(m); // Save updated scores
+                if (isCompleted) {
+                    // TRUST THE DB for completed weeks
+                    homeScore = m.getHomeScore();
+                    awayScore = m.getAwayScore();
+                } else {
+                    // If not completed but past, recalculate to be safe.
+                    homeScore = calculateTeamScoreForPeriod(m.getHomeTeam(), m.getGameWeek().getStartDate(),
+                            m.getGameWeek().getEndDate());
+                    awayScore = calculateTeamScoreForPeriod(m.getAwayTeam(), m.getGameWeek().getStartDate(),
+                            m.getGameWeek().getEndDate());
+
+                    m.setHomeScore(homeScore);
+                    m.setAwayScore(awayScore);
+                    matchupRepository.save(m);
+                }
 
                 if (homeScore > awayScore) {
                     // Home Win

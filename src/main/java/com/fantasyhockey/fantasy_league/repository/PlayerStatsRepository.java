@@ -8,19 +8,27 @@ import java.util.List;
 @Repository
 public interface PlayerStatsRepository extends JpaRepository<PlayerStats, Long> {
 
-    List<PlayerStats> findByPlayerId(Long playerId);
+        List<PlayerStats> findByPlayerId(Long playerId);
 
-    // Kontrola duplicity
-    boolean existsByPlayerIdAndGameId(Long playerId, Long gameId);
+        // Kontrola duplicity
+        boolean existsByPlayerIdAndGameId(Long playerId, Long gameId);
 
-    List<PlayerStats> findByPlayerIdAndDateBetween(Long playerId, java.time.LocalDate startDate,
-            java.time.LocalDate endDate);
+        List<PlayerStats> findByPlayerIdAndDateBetween(Long playerId, java.time.LocalDate startDate,
+                        java.time.LocalDate endDate);
 
-    @org.springframework.data.jpa.repository.Query("SELECT s.player, SUM(s.fantasyPoints) as totalPoints " +
-            "FROM PlayerStats s " +
-            "WHERE s.player.id IN :playerIds AND s.date BETWEEN :startDate AND :endDate " +
-            "GROUP BY s.player " +
-            "ORDER BY totalPoints DESC")
-    List<Object[]> findTopPlayersByPointsInDateRange(List<Long> playerIds, java.time.LocalDate startDate,
-            java.time.LocalDate endDate);
+        @org.springframework.data.jpa.repository.Query("SELECT s.player, " +
+                        "SUM(s.fantasyPoints) as totalPoints, " +
+                        "SUM(s.goals) as totalGoals, " +
+                        "SUM(s.assists) as totalAssists, " +
+                        "SUM(s.plusMinus) as totalPlusMinus, " +
+                        "SUM(s.shots) as totalShots, " +
+                        "SUM(s.blockedShots) as totalBlockedShots, " +
+                        "SUM(s.hits) as totalHits, " +
+                        "SUM(s.pim) as totalPim " +
+                        "FROM PlayerStats s " +
+                        "WHERE s.player.id IN :playerIds AND s.date BETWEEN :startDate AND :endDate " +
+                        "GROUP BY s.player " +
+                        "ORDER BY totalPoints DESC")
+        List<Object[]> findTopPlayersByPointsInDateRange(List<Long> playerIds, java.time.LocalDate startDate,
+                        java.time.LocalDate endDate);
 }

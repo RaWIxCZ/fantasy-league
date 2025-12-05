@@ -400,3 +400,44 @@
     pointer-events: none;
     /* Aby šlo kliknout skrz, pokud je potřeba, ale spíš ne */
 }
+
+/* --- ZAMČENÝ HRÁČ (HRAJE ZÁPAS) --- */
+.roster-card-modern.is-locked {
+    opacity: 0.6;
+    background-color: #f2f2f2;
+    border-color: #95a5a6;
+    cursor: not-allowed !important;
+    position: relative;
+    user-select: none;
+}
+
+.lock-badge-overlay {
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%); 
+    /* User said "badge na pravé straně okénka", centered vertically usually looks best or top-right? */
+    /* "badge na právé straně svého okénka ... šedé pozadí s bílým zámkem" */
+    height: 100%;
+    width: 40px; /* Cover right side or just a badge? */
+    /* Let's make it a small badge as requested */
+    right: 10px;
+    top: 10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #7f8c8d; /* Gray */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 50;
+    pointer-events: none;
+    transform: none;
+}
+
+.lock-badge-overlay svg {
+    width: 14px;
+    height: 14px;
+    fill: white;
+}

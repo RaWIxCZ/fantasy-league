@@ -6,11 +6,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
+        /* Previous styles... */
         .matchup-card {
             transition: transform 0.2s;
         }
 
-        /* Removed hover lift animation as requested */
+        /* ... existing styles ... */
 
         .team-logo-placeholder {
             width: 60px;
@@ -56,7 +57,41 @@
         .animate-pulse {
             animation: pulse 2s infinite;
             display: inline-block;
-            /* Ensure transform works */
+        }
+
+        /* New Animations */
+        @keyframes slideDownEntry {
+            from {
+                opacity: 0;
+                transform: translateY(-80px);
+                /* Slips from under the header */
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUpExit {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-80px);
+                /* Goes back under */
+            }
+        }
+
+        .slide-down-entry {
+            animation: slideDownEntry 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .slide-up-exit {
+            animation: slideUpExit 0.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
         }
 
         .stat-box {
@@ -144,6 +179,60 @@
                 box-shadow: 0 0 15px 5px rgba(220, 53, 69, 0.8);
             }
         }
+
+        .current-week-badge {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            animation: pulse-badge-red 2s infinite;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3);
+        }
+
+        @keyframes pulse-badge-red {
+            0% {
+                transform: translateX(-50%) scale(1);
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+            }
+
+            70% {
+                transform: translateX(-50%) scale(1.05);
+                box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+            }
+
+            100% {
+                transform: translateX(-50%) scale(1);
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+        /* Layering Control */
+        .faceoff-header {
+            position: relative;
+            z-index: 50;
+            /* Above the matchups */
+            background-color: #f8f9fa;
+            /* Match body bg to mask sliding content */
+            padding-bottom: 2rem;
+            /* Give some cover space */
+            margin-bottom: -2rem;
+            /* Negate padding to keep layout tight but allow overlap */
+        }
+
+        .matchups-container-wrapper {
+            position: relative;
+            z-index: 10;
+            /* Below header */
+            padding-top: 2rem;
+            /* Compensate for header negate */
+        }
     </style>
 </head>
 
@@ -151,26 +240,33 @@
 
     <div th:replace="~{fragments :: nav}"></div>
 
-    <div class="container-fluid py-5">
+    <div class="container-fluid py-5 overflow-hidden"> <!-- overflow-hidden prevents scrollbars during animation -->
         <!-- Header -->
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold text-uppercase">Faceoff</h1>
-            <div th:if="${currentWeek != null}" class="d-flex justify-content-center align-items-center mt-3">
+        <div class="text-center mb-4 faceoff-header">
+            <h1 class="display-4 fw-bold text-uppercase mb-3">Faceoff</h1>
+            <div th:if="${currentWeek != null}"
+                class="d-flex justify-content-center align-items-center position-relative">
                 <a th:if="${prevWeek != null}" th:href="@{/faceoff(week=${prevWeek})}"
-                    class="btn btn-outline-secondary btn-sm me-3 rounded-circle">
+                    class="btn btn-outline-secondary btn-sm me-3 rounded-circle nav-arrow">
                     <i class="bi bi-chevron-left"></i>
                 </a>
 
-                <div class="bg-white px-4 py-2 rounded-pill shadow-sm">
+                <div class="bg-white px-4 py-2 rounded-pill shadow-sm position-relative">
                     <span class="text-muted text-uppercase fw-bold small me-2">Týden</span>
                     <span class="fw-bold text-primary" th:text="${currentWeek.weekNumber}">1</span>
                     <span class="mx-2 text-muted">|</span>
                     <span
                         th:text="${#temporals.format(currentWeek.startDate, 'd. M.')} + ' - ' + ${#temporals.format(currentWeek.endDate, 'd. M.')}">Datum</span>
+
+                    <!-- CURRENT WEEK BADGE -->
+                    <div th:if="${actualCurrentWeek != null and currentWeek.id == actualCurrentWeek.id}"
+                        class="current-week-badge">
+                        AKTUÁLNÍ HRACÍ TÝDEN
+                    </div>
                 </div>
 
                 <a th:if="${nextWeek != null}" th:href="@{/faceoff(week=${nextWeek})}"
-                    class="btn btn-outline-secondary btn-sm ms-3 rounded-circle">
+                    class="btn btn-outline-secondary btn-sm ms-3 rounded-circle nav-arrow">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </div>
@@ -180,257 +276,272 @@
         </div>
 
         <!-- Matchups Grid -->
-        <div class="row g-4 justify-content-center">
-            <div th:each="detail : ${matchups}" class="col-xl-4 col-lg-6">
-                <div class="card border-0 shadow-sm h-100 matchup-card">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between">
+        <div class="matchups-container-wrapper">
+            <div id="matchupsGrid" class="row g-4 justify-content-center slide-down-entry">
+                <div th:each="detail : ${matchups}" class="col-xl-4 col-lg-6">
+                    <div class="card border-0 shadow-sm h-100 matchup-card">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between">
 
-                            <!-- Home Team -->
-                            <div class="text-center position-relative" style="width: 35%;">
-                                <!-- Streak Text -->
-                                <div th:if="${detail.homeStreak >= 5}" class="streak-badge streak-badge-win">
-                                    WIN STREAK <span th:text="${detail.homeStreak}">5</span>
-                                </div>
-                                <div th:if="${detail.homeStreak <= -5}" class="streak-badge streak-badge-loss">
-                                    LOSE STREAK <span th:text="${T(java.lang.Math).abs(detail.homeStreak)}">5</span>
-                                </div>
+                                <!-- Home Team -->
+                                <div class="text-center position-relative" style="width: 35%;">
+                                    <!-- Streak Text -->
+                                    <div th:if="${detail.homeStreak >= 5}" class="streak-badge streak-badge-win">
+                                        WIN STREAK <span th:text="${detail.homeStreak}">5</span>
+                                    </div>
+                                    <div th:if="${detail.homeStreak <= -5}" class="streak-badge streak-badge-loss">
+                                        LOSE STREAK <span th:text="${T(java.lang.Math).abs(detail.homeStreak)}">5</span>
+                                    </div>
 
-                                <div class="mx-auto mb-3 position-relative" style="width: 60px; height: 60px;">
-                                    <div class="w-100 h-100 rounded-circle"
-                                        th:classappend="${detail.homeStreak >= 5 ? 'fire-effect-gold' : (detail.homeStreak <= -5 ? 'fire-effect-red' : '')}">
-                                        <img th:if="${detail.matchup.homeTeam.logoUrl != null}"
-                                            th:src="${detail.matchup.homeTeam.logoUrl}" class="img-fluid rounded-circle"
-                                            style="width: 100%; height: 100%; object-fit: cover;" alt="Logo">
-                                        <div th:unless="${detail.matchup.homeTeam.logoUrl != null}"
-                                            class="team-logo-placeholder fs-4 w-100 h-100">
-                                            <span
-                                                th:text="${#strings.substring(detail.matchup.homeTeam.teamName, 0, 1)}">H</span>
+                                    <div class="mx-auto mb-3 position-relative" style="width: 60px; height: 60px;">
+                                        <div class="w-100 h-100 rounded-circle"
+                                            th:classappend="${detail.homeStreak >= 5 ? 'fire-effect-gold' : (detail.homeStreak <= -5 ? 'fire-effect-red' : '')}">
+                                            <img th:if="${detail.matchup.homeTeam.logoUrl != null}"
+                                                th:src="${detail.matchup.homeTeam.logoUrl}"
+                                                class="img-fluid rounded-circle"
+                                                style="width: 100%; height: 100%; object-fit: cover;" alt="Logo">
+                                            <div th:unless="${detail.matchup.homeTeam.logoUrl != null}"
+                                                class="team-logo-placeholder fs-4 w-100 h-100">
+                                                <span
+                                                    th:text="${#strings.substring(detail.matchup.homeTeam.teamName, 0, 1)}">H</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <h5 class="fw-bold mb-0 text-truncate" th:text="${detail.matchup.homeTeam.teamName}">
-                                    Domácí
-                                </h5>
-                                <div class="text-muted small mb-2">Domácí</div>
+                                    <h5 class="fw-bold mb-0 text-truncate"
+                                        th:text="${detail.matchup.homeTeam.teamName}">
+                                        Domácí
+                                    </h5>
+                                    <div class="text-muted small mb-2">Domácí</div>
 
-                                <!-- Form Badges -->
-                                <div class="d-flex justify-content-center gap-1">
-                                    <span th:each="res : ${detail.homeForm}" class="badge rounded-pill"
-                                        th:classappend="${res == 'V' ? 'bg-success' : (res == 'P' ? 'bg-danger' : 'bg-secondary')}"
-                                        th:text="${res}"
-                                        style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">
-                                    </span>
+                                    <!-- Form Badges -->
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <span th:each="res : ${detail.homeForm}" class="badge rounded-pill"
+                                            th:classappend="${res == 'V' ? 'bg-success' : (res == 'P' ? 'bg-danger' : 'bg-secondary')}"
+                                            th:text="${res}"
+                                            style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Score / VS -->
+                                <div class="text-center" style="width: 30%;">
+                                    <div
+                                        class="score-display font-monospace mb-1 d-flex justify-content-center align-items-center">
+                                        <span class="text-primary me-2"
+                                            th:text="${#numbers.formatInteger(detail.matchup.homeScore, 0)}">0</span>
+                                        <span class="text-muted mx-1">:</span>
+                                        <span class="text-danger ms-2"
+                                            th:text="${#numbers.formatInteger(detail.matchup.awayScore, 0)}">0</span>
+                                    </div>
+                                    <span class="badge bg-light text-secondary border vs-badge">VS</span>
+                                </div>
+
+                                <!-- Away Team -->
+                                <div class="text-center position-relative" style="width: 35%;">
+                                    <!-- Streak Text -->
+                                    <div th:if="${detail.awayStreak >= 5}" class="streak-badge streak-badge-win">
+                                        WIN STREAK <span th:text="${detail.awayStreak}">5</span>
+                                    </div>
+                                    <div th:if="${detail.awayStreak <= -5}" class="streak-badge streak-badge-loss">
+                                        LOSE STREAK <span th:text="${T(java.lang.Math).abs(detail.awayStreak)}">5</span>
+                                    </div>
+
+                                    <div class="mx-auto mb-3 position-relative" style="width: 60px; height: 60px;">
+                                        <div class="w-100 h-100 rounded-circle"
+                                            th:classappend="${detail.awayStreak >= 5 ? 'fire-effect-gold' : (detail.awayStreak <= -5 ? 'fire-effect-red' : '')}">
+                                            <img th:if="${detail.matchup.awayTeam.logoUrl != null}"
+                                                th:src="${detail.matchup.awayTeam.logoUrl}"
+                                                class="img-fluid rounded-circle"
+                                                style="width: 100%; height: 100%; object-fit: cover;" alt="Logo">
+                                            <div th:unless="${detail.matchup.awayTeam.logoUrl != null}"
+                                                class="team-logo-placeholder fs-4 w-100 h-100">
+                                                <span
+                                                    th:text="${#strings.substring(detail.matchup.awayTeam.teamName, 0, 1)}">A</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <h5 class="fw-bold mb-0 text-truncate"
+                                        th:text="${detail.matchup.awayTeam.teamName}">
+                                        Hosté</h5>
+                                    <div class="text-muted small mb-2">Hosté</div>
+
+                                    <!-- Form Badges -->
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <span th:each="res : ${detail.awayForm}" class="badge rounded-pill"
+                                            th:classappend="${res == 'V' ? 'bg-success' : (res == 'P' ? 'bg-danger' : 'bg-secondary')}"
+                                            th:text="${res}"
+                                            style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Score / VS -->
-                            <div class="text-center" style="width: 30%;">
-                                <div
-                                    class="score-display font-monospace mb-1 d-flex justify-content-center align-items-center">
-                                    <span class="text-primary me-2"
-                                        th:text="${#numbers.formatInteger(detail.matchup.homeScore, 0)}">0</span>
-                                    <span class="text-muted mx-1">:</span>
-                                    <span class="text-danger ms-2"
-                                        th:text="${#numbers.formatInteger(detail.matchup.awayScore, 0)}">0</span>
-                                </div>
-                                <span class="badge bg-light text-secondary border vs-badge">VS</span>
-                            </div>
-
-                            <!-- Away Team -->
-                            <div class="text-center position-relative" style="width: 35%;">
-                                <!-- Streak Text -->
-                                <div th:if="${detail.awayStreak >= 5}" class="streak-badge streak-badge-win">
-                                    WIN STREAK <span th:text="${detail.awayStreak}">5</span>
-                                </div>
-                                <div th:if="${detail.awayStreak <= -5}" class="streak-badge streak-badge-loss">
-                                    LOSE STREAK <span th:text="${T(java.lang.Math).abs(detail.awayStreak)}">5</span>
-                                </div>
-
-                                <div class="mx-auto mb-3 position-relative" style="width: 60px; height: 60px;">
-                                    <div class="w-100 h-100 rounded-circle"
-                                        th:classappend="${detail.awayStreak >= 5 ? 'fire-effect-gold' : (detail.awayStreak <= -5 ? 'fire-effect-red' : '')}">
-                                        <img th:if="${detail.matchup.awayTeam.logoUrl != null}"
-                                            th:src="${detail.matchup.awayTeam.logoUrl}" class="img-fluid rounded-circle"
-                                            style="width: 100%; height: 100%; object-fit: cover;" alt="Logo">
-                                        <div th:unless="${detail.matchup.awayTeam.logoUrl != null}"
-                                            class="team-logo-placeholder fs-4 w-100 h-100">
-                                            <span
-                                                th:text="${#strings.substring(detail.matchup.awayTeam.teamName, 0, 1)}">A</span>
+                            <!-- Preview Section (Hidden by default, expanded by global trigger) -->
+                            <div class="collapse matchup-detail" th:id="'preview-' + ${detail.matchup.id}">
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="row g-3">
+                                        <!-- Win Probability -->
+                                        <div class="col-12 text-center mb-3">
+                                            <h6 class="text-muted text-uppercase small fw-bold">Šance na výhru</h6>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar bg-primary" role="progressbar"
+                                                    th:style="'width: ' + ${detail.homeWinProb} + '%'"
+                                                    th:text="${detail.homeWinProb} + '%'"></div>
+                                                <div class="progress-bar bg-danger" role="progressbar"
+                                                    th:style="'width: ' + ${detail.awayWinProb} + '%'"
+                                                    th:text="${detail.awayWinProb} + '%'"></div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <h5 class="fw-bold mb-0 text-truncate" th:text="${detail.matchup.awayTeam.teamName}">
-                                    Hosté</h5>
-                                <div class="text-muted small mb-2">Hosté</div>
 
-                                <!-- Form Badges -->
-                                <div class="d-flex justify-content-center gap-1">
-                                    <span th:each="res : ${detail.awayForm}" class="badge rounded-pill"
-                                        th:classappend="${res == 'V' ? 'bg-success' : (res == 'P' ? 'bg-danger' : 'bg-secondary')}"
-                                        th:text="${res}"
-                                        style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Preview Section (Hidden by default, expanded by global trigger) -->
-                        <div class="collapse matchup-detail" th:id="'preview-' + ${detail.matchup.id}">
-                            <div class="mt-4 pt-3 border-top">
-                                <div class="row g-3">
-                                    <!-- Win Probability -->
-                                    <div class="col-12 text-center mb-3">
-                                        <h6 class="text-muted text-uppercase small fw-bold">Šance na výhru</h6>
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar bg-primary" role="progressbar"
-                                                th:style="'width: ' + ${detail.homeWinProb} + '%'"
-                                                th:text="${detail.homeWinProb} + '%'"></div>
-                                            <div class="progress-bar bg-danger" role="progressbar"
-                                                th:style="'width: ' + ${detail.awayWinProb} + '%'"
-                                                th:text="${detail.awayWinProb} + '%'"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Top Season Player -->
-                                    <div class="col-6 text-center border-end">
-                                        <h6 class="text-muted text-uppercase small fw-bold mb-3">Top Hráč Sezóny</h6>
-                                        <div th:if="${detail.homeTopPlayer != null}">
-                                            <img th:src="${detail.homeTopPlayer.headshotUrl}" alt="Player"
-                                                class="rounded-circle mb-2" style="width: 50px; height: 50px;">
-                                            <div class="fw-bold small"
-                                                th:text="${detail.homeTopPlayer.firstName} + ' ' + ${detail.homeTopPlayer.lastName}">
-                                                Jméno</div>
-                                            <div class="text-primary fw-bold"
-                                                th:text="${detail.homeTopPlayer.seasonFantasyPoints} + ' b'">0 b</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 text-center">
-                                        <h6 class="text-muted text-uppercase small fw-bold mb-3">Top Hráč Sezóny</h6>
-                                        <div th:if="${detail.awayTopPlayer != null}">
-                                            <img th:src="${detail.awayTopPlayer.headshotUrl}" alt="Player"
-                                                class="rounded-circle mb-2" style="width: 50px; height: 50px;">
-                                            <div class="fw-bold small"
-                                                th:text="${detail.awayTopPlayer.firstName} + ' ' + ${detail.awayTopPlayer.lastName}">
-                                                Jméno</div>
-                                            <div class="text-danger fw-bold"
-                                                th:text="${detail.awayTopPlayer.seasonFantasyPoints} + ' b'">0 b</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Top 5 Last Week -->
-                                    <div class="col-12">
-                                        <div class="card card-body bg-light border-0 mt-2">
-                                            <h6 class="small fw-bold text-muted mb-3 text-center">Top 5 (minulý týden)
+                                        <!-- Top Season Player -->
+                                        <div class="col-6 text-center border-end">
+                                            <h6 class="text-muted text-uppercase small fw-bold mb-3">Top Hráč Sezóny
                                             </h6>
-                                            <div class="row g-2">
-                                                <!-- Domácí Top 5 -->
-                                                <div class="col-6">
-                                                    <div th:if="${not #lists.isEmpty(detail.homeLastWeekTop5)}">
-                                                        <div th:each="stats : ${detail.homeLastWeekTop5}"
-                                                            class="d-flex align-items-center mb-2 p-1 border rounded bg-white">
-                                                            <img th:src="${stats.player.headshotUrl}"
-                                                                class="rounded-circle me-2"
-                                                                style="width: 30px; height: 30px;"
-                                                                onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
-                                                            <div class="small text-truncate w-100">
-                                                                <div class="fw-bold mb-1"
-                                                                    th:text="${stats.player.firstName} + ' ' + ${stats.player.lastName}">
-                                                                    Jméno</div>
-                                                                <div class="d-flex justify-content-between text-muted"
-                                                                    style="font-size: 0.65rem;">
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">G</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.goals}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">A</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.assists}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">+/-</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.plusMinus}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">STŘEL</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.shots}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">HITY</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.hits}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">BLOKY</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.blockedShots}">0</span>
-                                                                    </div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">BODY</span><span
-                                                                            class="stat-value text-primary"
-                                                                            th:text="${#numbers.formatInteger(stats.fantasyPoints, 0)}">0</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div th:unless="${not #lists.isEmpty(detail.homeLastWeekTop5)}"
-                                                        class="text-center py-4">
-                                                        <span class="text-muted fw-bold">TBD</span>
-                                                    </div>
+                                            <div th:if="${detail.homeTopPlayer != null}">
+                                                <img th:src="${detail.homeTopPlayer.headshotUrl}" alt="Player"
+                                                    class="rounded-circle mb-2" style="width: 50px; height: 50px;">
+                                                <div class="fw-bold small"
+                                                    th:text="${detail.homeTopPlayer.firstName} + ' ' + ${detail.homeTopPlayer.lastName}">
+                                                    Jméno</div>
+                                                <div class="text-primary fw-bold"
+                                                    th:text="${detail.homeTopPlayer.seasonFantasyPoints} + ' b'">0 b
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 text-center">
+                                            <h6 class="text-muted text-uppercase small fw-bold mb-3">Top Hráč Sezóny
+                                            </h6>
+                                            <div th:if="${detail.awayTopPlayer != null}">
+                                                <img th:src="${detail.awayTopPlayer.headshotUrl}" alt="Player"
+                                                    class="rounded-circle mb-2" style="width: 50px; height: 50px;">
+                                                <div class="fw-bold small"
+                                                    th:text="${detail.awayTopPlayer.firstName} + ' ' + ${detail.awayTopPlayer.lastName}">
+                                                    Jméno</div>
+                                                <div class="text-danger fw-bold"
+                                                    th:text="${detail.awayTopPlayer.seasonFantasyPoints} + ' b'">0 b
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                                <!-- Hosté Top 5 -->
-                                                <div class="col-6">
-                                                    <div th:if="${not #lists.isEmpty(detail.awayLastWeekTop5)}">
-                                                        <div th:each="stats : ${detail.awayLastWeekTop5}"
-                                                            class="d-flex align-items-center mb-2 p-1 border rounded bg-white">
-                                                            <img th:src="${stats.player.headshotUrl}"
-                                                                class="rounded-circle me-2"
-                                                                style="width: 30px; height: 30px;"
-                                                                onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
-                                                            <div class="small text-truncate w-100">
-                                                                <div class="fw-bold mb-1"
-                                                                    th:text="${stats.player.firstName} + ' ' + ${stats.player.lastName}">
-                                                                    Jméno</div>
-                                                                <div class="d-flex justify-content-between text-muted"
-                                                                    style="font-size: 0.65rem;">
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">G</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.goals}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">A</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.assists}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">+/-</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.plusMinus}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">STŘEL</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.shots}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">HITY</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.hits}">0</span></div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">BLOKY</span><span
-                                                                            class="stat-value"
-                                                                            th:text="${stats.blockedShots}">0</span>
-                                                                    </div>
-                                                                    <div class="stat-box"><span
-                                                                            class="stat-label">BODY</span><span
-                                                                            class="stat-value text-danger"
-                                                                            th:text="${#numbers.formatInteger(stats.fantasyPoints, 0)}">0</span>
+                                        <!-- Top 5 Last Week -->
+                                        <div class="col-12">
+                                            <div class="card card-body bg-light border-0 mt-2">
+                                                <h6 class="small fw-bold text-muted mb-3 text-center">Top 5 (minulý
+                                                    týden)
+                                                </h6>
+                                                <div class="row g-2">
+                                                    <!-- Domácí Top 5 -->
+                                                    <div class="col-6">
+                                                        <div th:if="${not #lists.isEmpty(detail.homeLastWeekTop5)}">
+                                                            <div th:each="stats : ${detail.homeLastWeekTop5}"
+                                                                class="d-flex align-items-center mb-2 p-1 border rounded bg-white">
+                                                                <img th:src="${stats.player.headshotUrl}"
+                                                                    class="rounded-circle me-2"
+                                                                    style="width: 30px; height: 30px;"
+                                                                    onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                                                                <div class="small text-truncate w-100">
+                                                                    <div class="fw-bold mb-1"
+                                                                        th:text="${stats.player.firstName} + ' ' + ${stats.player.lastName}">
+                                                                        Jméno</div>
+                                                                    <div class="d-flex justify-content-between text-muted"
+                                                                        style="font-size: 0.65rem;">
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">G</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.goals}">0</span></div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">A</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.assists}">0</span>
+                                                                        </div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">+/-</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.plusMinus}">0</span>
+                                                                        </div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">STŘEL</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.shots}">0</span></div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">HITY</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.hits}">0</span></div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">BLOKY</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.blockedShots}">0</span>
+                                                                        </div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">BODY</span><span
+                                                                                class="stat-value text-primary"
+                                                                                th:text="${#numbers.formatInteger(stats.fantasyPoints, 0)}">0</span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        <div th:unless="${not #lists.isEmpty(detail.homeLastWeekTop5)}"
+                                                            class="text-center py-4">
+                                                            <span class="text-muted fw-bold">TBD</span>
+                                                        </div>
                                                     </div>
-                                                    <div th:unless="${not #lists.isEmpty(detail.awayLastWeekTop5)}"
-                                                        class="text-center py-4">
-                                                        <span class="text-muted fw-bold">TBD</span>
+
+                                                    <!-- Hosté Top 5 -->
+                                                    <div class="col-6">
+                                                        <div th:if="${not #lists.isEmpty(detail.awayLastWeekTop5)}">
+                                                            <div th:each="stats : ${detail.awayLastWeekTop5}"
+                                                                class="d-flex align-items-center mb-2 p-1 border rounded bg-white">
+                                                                <img th:src="${stats.player.headshotUrl}"
+                                                                    class="rounded-circle me-2"
+                                                                    style="width: 30px; height: 30px;"
+                                                                    onerror="this.onerror=null; this.src='https://assets.nhle.com/mugs/nhl/default-skater.png';">
+                                                                <div class="small text-truncate w-100">
+                                                                    <div class="fw-bold mb-1"
+                                                                        th:text="${stats.player.firstName} + ' ' + ${stats.player.lastName}">
+                                                                        Jméno</div>
+                                                                    <div class="d-flex justify-content-between text-muted"
+                                                                        style="font-size: 0.65rem;">
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">G</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.goals}">0</span></div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">A</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.assists}">0</span>
+                                                                        </div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">+/-</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.plusMinus}">0</span>
+                                                                        </div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">STŘEL</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.shots}">0</span></div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">HITY</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.hits}">0</span></div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">BLOKY</span><span
+                                                                                class="stat-value"
+                                                                                th:text="${stats.blockedShots}">0</span>
+                                                                        </div>
+                                                                        <div class="stat-box"><span
+                                                                                class="stat-label">BODY</span><span
+                                                                                class="stat-value text-danger"
+                                                                                th:text="${#numbers.formatInteger(stats.fantasyPoints, 0)}">0</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div th:unless="${not #lists.isEmpty(detail.awayLastWeekTop5)}"
+                                                            class="text-center py-4">
+                                                            <span class="text-muted fw-bold">TBD</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -476,6 +587,24 @@
                 arrow.classList.remove('bi-chevron-up');
                 arrow.classList.add('bi-chevron-down');
             }
+        });
+
+        // Navigation Interception for Smooth Exit
+        document.querySelectorAll('.nav-arrow').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                const grid = document.getElementById('matchupsGrid');
+
+                // Add exit class
+                grid.classList.remove('slide-down-entry');
+                grid.classList.add('slide-up-exit');
+
+                // Navigate after animation
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 400); // 400ms matches CSS animation duration
+            });
         });
     </script>
 

@@ -22,8 +22,8 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests((requests) -> requests
                         // Tyto stránky povolíme všem (i nepřihlášeným):
-                        .requestMatchers("/register", "/save-user", "/css/**", "/js/**", "/images/**", "/admin/**")
-                        .permitAll()
+                        .requestMatchers("/register", "/save-user", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         // Všechno ostatní vyžaduje přihlášení:
                         .anyRequest().authenticated())
                 .formLogin((form) -> form

@@ -234,7 +234,7 @@ public class MatchupService {
 
         List<Long> playerIds = team.getPlayers().stream().map(Player::getId).collect(Collectors.toList());
 
-        // Use the custom repository method
+        // Use the custom repository method to fetch ALL stats in one query
         List<Object[]> results = playerStatsRepository.findTopPlayersByPointsInDateRange(
                 playerIds, week.getStartDate(), week.getEndDate());
 
@@ -242,51 +242,18 @@ public class MatchupService {
                 .limit(limit)
                 .map(obj -> {
                     Player player = (Player) obj[0];
-                    // We need to fetch G/A/P specifically for this week
-                    // We might need to query stats details or aggregate them here.
-                    // For now, let's assume we can get them.
-                    // Ideally, findTopPlayersByPointsInDateRange should return aggregated stats.
-                    // Since we can't easily change the repo query return type without checking it,
-                    // let's do a separate calculation or update the query.
-                    // Fix for ClassCastException: sum() might return Long or Double depending on DB
-                    Number pointsNum = (Number) obj[1];
-                    double points = pointsNum != null ? pointsNum.doubleValue() : 0.0;
-
-                    int goals = calculateStatForPlayer(player, week, "goals");
-                    int assists = calculateStatForPlayer(player, week, "assists");
-                    int plusMinus = calculateStatForPlayer(player, week, "plusMinus");
-                    int shots = calculateStatForPlayer(player, week, "shots");
-                    int blockedShots = calculateStatForPlayer(player, week, "blockedShots");
-                    int hits = calculateStatForPlayer(player, week, "hits");
-                    int pim = calculateStatForPlayer(player, week, "pim");
+                    double points = obj[1] instanceof Number ? ((Number) obj[1]).doubleValue() : 0.0;
+                    int goals = obj[2] instanceof Number ? ((Number) obj[2]).intValue() : 0;
+                    int assists = obj[3] instanceof Number ? ((Number) obj[3]).intValue() : 0;
+                    int plusMinus = obj[4] instanceof Number ? ((Number) obj[4]).intValue() : 0;
+                    int shots = obj[5] instanceof Number ? ((Number) obj[5]).intValue() : 0;
+                    int blockedShots = obj[6] instanceof Number ? ((Number) obj[6]).intValue() : 0;
+                    int hits = obj[7] instanceof Number ? ((Number) obj[7]).intValue() : 0;
+                    int pim = obj[8] instanceof Number ? ((Number) obj[8]).intValue() : 0;
 
                     return new com.fantasyhockey.fantasy_league.dto.PlayerWeeklyStatsDto(player, goals, assists,
                             plusMinus, shots, blockedShots, hits, pim, points);
                 })
                 .collect(Collectors.toList());
-    }
-
-    private int calculateStatForPlayer(Player player, GameWeek week, String statType) {
-        return playerStatsRepository
-                .findByPlayerIdAndDateBetween(player.getId(), week.getStartDate(), week.getEndDate())
-                .stream()
-                .mapToInt(stats -> {
-                    if ("goals".equals(statType))
-                        return stats.getGoals();
-                    if ("assists".equals(statType))
-                        return stats.getAssists();
-                    if ("plusMinus".equals(statType))
-                        return stats.getPlusMinus();
-                    if ("shots".equals(statType))
-                        return stats.getShots();
-                    if ("blockedShots".equals(statType))
-                        return stats.getBlockedShots();
-                    if ("hits".equals(statType))
-                        return stats.getHits();
-                    if ("pim".equals(statType))
-                        return stats.getPim();
-                    return 0;
-                })
-                .sum();
     }
 }

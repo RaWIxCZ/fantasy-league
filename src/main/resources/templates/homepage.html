@@ -60,6 +60,97 @@
                 opacity: 1;
             }
         }
+
+        /* Camera Flash Animation for Live Button */
+        @keyframes camera-flash {
+            0% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+            }
+
+            10% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 50% 50%, 0px 0px, 0px 0px, 0px 0px;
+            }
+
+            20% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+            }
+
+            30% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 60% 60%, 0px 0px, 0px 0px;
+            }
+
+            40% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+            }
+
+            50% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 40% 40%, 0px 0px;
+            }
+
+            60% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+            }
+
+            70% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 0px 0px, 70% 70%;
+            }
+
+            80% {
+                background-position: 10% 10%, 90% 90%, 20% 80%, 80% 20%;
+                background-size: 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+            }
+        }
+
+        .camera-lights-btn {
+            background-color: #000;
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        /* Create a pseudo-element for the flashes to avoid messing with text */
+        .camera-lights-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                radial-gradient(circle, rgba(255, 255, 255, 0.8) 2px, transparent 10px),
+                radial-gradient(circle, rgba(255, 255, 255, 0.6) 2px, transparent 15px),
+                radial-gradient(circle, rgba(255, 255, 255, 0.9) 2px, transparent 8px),
+                radial-gradient(circle, rgba(255, 255, 255, 0.7) 2px, transparent 12px);
+            background-repeat: no-repeat;
+            opacity: 0.3;
+            animation: camera-flash 2s infinite linear;
+            pointer-events: none;
+        }
+
+        .camera-lights-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -235,6 +326,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- LIVE ENTRANCE BUTTON (Hidden by default, shown via JS if live games exist) -->
+                    <div id="btn-live-entrance" class="p-3 border-top bg-light" style="display: none;">
+                        <a href="/live" class="camera-lights-btn">
+                            <i class="bi bi-camera-reels me-2"></i> Live Centrum
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -282,10 +380,14 @@
             // Simple JS check to hide "No live games" if there are any live game elements
             const liveGames = document.querySelectorAll('.live-indicator');
             const msg = document.getElementById('no-live-games-msg');
-            if (liveGames.length > 0 && msg) {
-                msg.style.display = 'none';
-            } else if (msg) {
-                msg.style.display = 'block';
+            const liveBtn = document.getElementById('btn-live-entrance');
+
+            if (liveGames.length > 0) {
+                if (msg) msg.style.display = 'none';
+                if (liveBtn) liveBtn.style.display = 'block';
+            } else {
+                if (msg) msg.style.display = 'block';
+                if (liveBtn) liveBtn.style.display = 'none';
             }
         }
 

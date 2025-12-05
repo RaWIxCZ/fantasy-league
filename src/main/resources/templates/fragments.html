@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <body>
 
@@ -24,11 +24,19 @@
                             href="/faceoff">Zápasy</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" th:classappend="${requestURI == '/live' ? 'active' : ''}"
+                            href="/live">Live</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" th:classappend="${requestURI == '/leaderboard' ? 'active' : ''}"
                             href="/leaderboard">Tabulka</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item" th:if="${isAdmin}">
+                        <a class="nav-link" th:classappend="${requestURI == '/admin' ? 'active' : ''}"
+                            href="/admin">Admin Hub</a>
+                    </li>
                     <li class="nav-item">
                         <form th:action="@{/logout}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-link nav-link"
