@@ -7,28 +7,45 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
+/**
+ * Represents game-by-game statistics for a player.
+ * Each record captures a player's performance in a single NHL game,
+ * including both traditional stats and calculated fantasy points.
+ */
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlayerStats {
 
+    // ==================== Primary Identifier ====================
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Kterého hráče se to týká?
+    // ==================== References ====================
+
+    /**
+     * The player these statistics belong to.
+     */
     @ManyToOne
     @JoinColumn(name = "player_id")
     private Player player;
 
-    // Kdy se zápas hrál?
+    /**
+     * The date when this game was played.
+     */
     private LocalDate date;
 
-    // Musíme si pamatovat ID zápasu z NHL, abychom ho nenačítali 2x
+    /**
+     * NHL game ID to prevent duplicate stat entries.
+     * Used to ensure we don't process the same game twice.
+     */
     private Long gameId;
 
-    // Statistiky z toho zápasu
+    // ==================== Skater Statistics ====================
+
     private int goals;
     private int assists;
 
@@ -44,15 +61,41 @@ public class PlayerStats {
     @Column(columnDefinition = "integer default 0")
     private int hits;
 
+    /**
+     * Penalty minutes (PIM).
+     */
     @Column(columnDefinition = "integer default 0")
     private int pim;
 
-    // Statistiky pro brankáře
+    // ==================== Goalie Statistics ====================
+
+    /**
+     * Number of saves made (goalies only).
+     */
     private int saves;
+
+    /**
+     * Number of shots faced (goalies only).
+     */
     private int shotsAgainst;
+
+    /**
+     * Number of goals allowed (goalies only).
+     */
     private int goalsAgainst;
+
+    /**
+     * Whether the goalie won the game (goalies only).
+     */
     private boolean win;
 
-    // Kolik fantasy bodů za to dostal? (např. Gól=5, Asistence=3 -> Celkem 8)
+    // ==================== Fantasy Points ====================
+
+    /**
+     * Total fantasy points earned in this game.
+     * Calculated based on the scoring system:
+     * - Goals, assists, shots, hits, blocks, etc. for skaters
+     * - Saves, goals against, shutouts, etc. for goalies
+     */
     private int fantasyPoints;
 }

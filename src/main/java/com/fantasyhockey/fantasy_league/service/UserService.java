@@ -7,30 +7,47 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service for managing user accounts and registration.
+ * Handles user creation with secure password encryption.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // Náš šifrovač z configu
+    private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Registers a new user in the system.
+     * Creates a user account with encrypted password and default USER role.
+     * 
+     * @param request registration data containing username, email, and password
+     */
     public void registerUser(UserRegistrationDto request) {
-        // 1. Vytvoříme nového uživatele
+        // Create new user entity
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
 
-        // 2. Heslo zašifrujeme
+        // Encrypt password using BCrypt
+        // Never store passwords as plain text!
         String encryptedPassword = passwordEncoder.encode(request.getPassword());
         user.setPassword(encryptedPassword);
 
+        // Set default role
         user.setRole("USER");
 
-        // 3. Uložíme do DB
+        // Save to database
         userRepository.save(user);
     }
 
-    // Metoda pro kontrolu, zda uživatel už neexistuje (použijeme později)
+    /**
+     * Checks if a user with the given username already exists.
+     * 
+     * @param username the username to check
+     * @return true if user exists, false otherwise
+     */
     public boolean userExists(String username) {
         return userRepository.findByUsername(username).isPresent();
     }

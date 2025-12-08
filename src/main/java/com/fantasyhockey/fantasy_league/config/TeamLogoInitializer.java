@@ -6,6 +6,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+/**
+ * Initializer that sets team logo URLs on application startup.
+ * Maps team IDs to their corresponding logo image files.
+ * Runs once when the application starts.
+ */
 @Component
 public class TeamLogoInitializer implements CommandLineRunner {
 
@@ -15,8 +20,15 @@ public class TeamLogoInitializer implements CommandLineRunner {
         this.fantasyTeamRepository = fantasyTeamRepository;
     }
 
+    /**
+     * Executes on application startup to set team logos.
+     * Updates existing teams with their logo file paths.
+     * 
+     * @param args command line arguments (not used)
+     */
     @Override
     public void run(String... args) throws Exception {
+        // Map team IDs to logo filenames
         Map<Long, String> logoMapping = Map.of(
                 1L, "keg.webp",
                 2L, "puk.webp",
@@ -25,6 +37,7 @@ public class TeamLogoInitializer implements CommandLineRunner {
                 5L, "dds.webp",
                 6L, "gob.webp");
 
+        // Update each team's logo URL
         logoMapping.forEach((id, filename) -> {
             fantasyTeamRepository.findById(id).ifPresent(team -> {
                 team.setLogoUrl("/images/" + filename);

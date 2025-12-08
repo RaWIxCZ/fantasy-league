@@ -12,25 +12,40 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Service for scraping NHL injury information from ESPN.
+ * Uses web scraping to get current player injury statuses.
+ */
 @Service
 public class EspnScraperService {
 
     private static final Logger logger = LoggerFactory.getLogger(EspnScraperService.class);
     private static final String ESPN_INJURY_URL = "https://www.espn.com/nhl/injuries";
 
+    /**
+     * Scrapes ESPN for current NHL player injuries.
+     * Only includes players with serious injuries (excludes "Day-To-Day" status).
+     * 
+     * @return map of player names to injury status descriptions
+     */
     public Map<String, String> getInjuredPlayers() {
         Map<String, String> injuredPlayers = new HashMap<>();
+
         try {
             Document doc = Jsoup.connect(ESPN_INJURY_URL).get();
             Elements injuryTables = doc.select(".Table__TBODY");
+
             for (Element table : injuryTables) {
                 Elements rows = table.select("tr");
+
                 for (Element row : rows) {
                     Elements cells = row.select("td");
+
                     if (cells.size() > 1) {
                         String playerName = cells.get(0).text();
                         String status = cells.get(1).text();
-                        // We only care about players who are actually injured, not day-to-day
+
+                        // Only include players with serious injuries, not day-to-day
                         if (!"Day-To-Day".equalsIgnoreCase(status)) {
                             injuredPlayers.put(playerName, status);
                         }
@@ -40,6 +55,7 @@ public class EspnScraperService {
         } catch (IOException e) {
             logger.error("Error while scraping ESPN for injuries: {}", e.getMessage());
         }
+
         return injuredPlayers;
     }
 }

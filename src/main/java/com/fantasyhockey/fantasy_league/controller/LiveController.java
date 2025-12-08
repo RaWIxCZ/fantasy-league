@@ -1,6 +1,5 @@
 package com.fantasyhockey.fantasy_league.controller;
 
-import com.fantasyhockey.fantasy_league.model.FantasyTeam;
 import com.fantasyhockey.fantasy_league.model.GameWeek;
 import com.fantasyhockey.fantasy_league.model.LineupSpot;
 import com.fantasyhockey.fantasy_league.model.Matchup;
